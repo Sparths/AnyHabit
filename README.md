@@ -61,6 +61,18 @@ AnyHabit uses a modern, high-performance stack:
 
 ---
 
+## 🤝 Community & Contributing
+
+AnyHabit is an open-source, community-driven project! We would absolutely love your input to make it even better. 
+
+* **💡 Have an idea?** We actively encourage feature requests! [Open a Feature Request](https://github.com/Sparths/AnyHabit/issues) to share your ideas and discuss them with the community.
+* **🐛 Found a bug?** Help us squash it by [Opening a Bug Report](https://github.com/Sparths/AnyHabit/issues).
+* **💻 Want to write code?** We welcome Pull Requests! Please check out our [Contributing Guidelines](CONTRIBUTING.md) to get your local environment set up.
+
+Whether it's a typo fix, a new feature, or a documentation update, all contributions are highly appreciated! Please ensure you follow our [Code of Conduct](CODE_OF_CONDUCT.md) when interacting with the community.
+
+---
+
 ## 👨‍💻 Local Development
 
 If you wish to modify the code and run it without Docker:
