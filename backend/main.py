@@ -168,3 +168,31 @@ def delete_journal_entry(tracker_id: int, journal_id: int, db: Session = Depends
     db.commit()
     
     return {"message": f"Journal with ID {journal_id} was deleted successfully"}
+
+
+@app.post("/trackers/{tracker_id}/logs/", response_model=schemas.HabitLog)
+def create_log(tracker_id: int, log: schemas.HabitLogCreate, db: Session = Depends(get_db)):
+    tracker = db.query(models.Tracker).filter(models.Tracker.id == tracker_id).first()
+    if not tracker:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+    
+    db_log = models.HabitLog(**log.model_dump(), tracker_id=tracker_id)
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log
+
+@app.get("/trackers/{tracker_id}/logs/", response_model=list[schemas.HabitLog])
+def read_logs(tracker_id: int, db: Session = Depends(get_db)):
+    logs = db.query(models.HabitLog).filter(models.HabitLog.tracker_id == tracker_id).all()
+    return logs
+
+@app.delete("/trackers/{tracker_id}/logs/{log_id}")
+def delete_log(tracker_id: int, log_id: int, db: Session = Depends(get_db)):
+    log = db.query(models.HabitLog).filter(models.HabitLog.id == log_id, models.HabitLog.tracker_id == tracker_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Log not found")
+    
+    db.delete(log)
+    db.commit()
+    return {"message": "Log deleted"}
