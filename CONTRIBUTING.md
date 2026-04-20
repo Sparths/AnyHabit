@@ -16,7 +16,7 @@ If you want to contribute code, you'll need to set up the project locally. You c
 
 ### Option 1: Using Docker (Recommended)
 1. Fork the repository and clone your fork:
-   `git clone https://github.com/YOUR-USERNAME/AnyHabit.git`
+   `git clone https://github.com/Sparths/AnyHabit.git`
 2. Navigate to the directory: `cd AnyHabit`
 3. Build and start the containers: `docker compose up -d --build`
 4. The app will be available at `http://localhost`.
