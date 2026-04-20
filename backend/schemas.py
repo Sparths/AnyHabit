@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
+
 class TrackerBase(BaseModel):
     name: str
     type: str 
@@ -31,6 +32,21 @@ class JournalEntryCreate(JournalEntryBase):
     pass
 
 class JournalEntry(JournalEntryBase):
+    id: int
+    tracker_id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class HabitLogBase(BaseModel):
+    amount: float = 1.0
+
+class HabitLogCreate(HabitLogBase):
+    pass
+
+class HabitLog(HabitLogBase):
     id: int
     tracker_id: int
     timestamp: datetime
