@@ -9,6 +9,14 @@
 
 ---
 
+## 📺 Preview
+
+![AnyHabit Demo](assets/demo.gif)
+
+*Watch how AnyHabit tracks your progress and savings in real-time.*
+
+---
+
 ## 🚀 One-Command Quick Start
 
 AnyHabit is designed to be "up and running" in seconds. You do **not** need Node.js or Python installed locally.
@@ -17,7 +25,7 @@ AnyHabit is designed to be "up and running" in seconds. You do **not** need Node
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Sparths/AnyHabit.git
+git clone [https://github.com/Sparths/AnyHabit.git](https://github.com/Sparths/AnyHabit.git)
 cd AnyHabit
 
 # 2. Build and start everything
@@ -36,7 +44,7 @@ Open **http://localhost** (or your device's IP) in your browser.
 By default, AnyHabit runs on **port 80**. If you need to change this (e.g., to run alongside other services on a Raspberry Pi), follow these steps:
 
 1. Create an environment file: `cp .env.example .env`
-2. Edit `.env` and change `APP_PORT=8080` (or your preferred port)
+2. Edit `.env` and change `APP_PORT=8080`
 3. Restart with: `docker compose up -d`
 
 ---
@@ -63,10 +71,13 @@ pip install -r backend/requirements.txt
 mkdir -p backend/data
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
+*Note: Make sure to install dependencies from `backend/requirements.txt`.*
 
 ### Frontend
 ```bash
 cd frontend
 npm install
+# Set API URL to point to your local backend
 VITE_API_URL=http://localhost:8000 npm run dev
 ```
+*Note: The frontend uses Vite for a fast development experience.*
