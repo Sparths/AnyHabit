@@ -20,7 +20,10 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-const API_URL = 'https://fluffy-parakeet-55pxj9wwgw4fpr7-8000.app.github.dev';
+// Empty string means "same origin" — all API calls go to /trackers/… on the current host.
+// When running via Docker (nginx proxy), this is the correct default.
+// For local development set VITE_API_URL=http://localhost:8000 (see README).
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 function App() {
   const [trackers, setTrackers] = useState([]);
