@@ -123,3 +123,13 @@ Join our **[Discord Server](https://discord.gg/ajknBq5zcH)** to:
 * **💡 Ideas:** [Open a Feature Request](https://github.com/Sparths/AnyHabit/issues)
 * **🐛 Bugs:** [Open a Bug Report](https://github.com/Sparths/AnyHabit/issues)
 * **💻 Code:** Check our [Contributing Guidelines](CONTRIBUTING.md)
+
+## ⭐ Star History
+
+<a href="https://www.star-history.com/?repos=Sparths%2FAnyHabit&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Sparths/AnyHabit&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Sparths/AnyHabit&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Sparths/AnyHabit&type=date&legend=top-left" />
+ </picture>
+</a>
