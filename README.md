@@ -21,6 +21,10 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
+#### [v0.3.1] - Latest Release
+- **Added:** Fix Darkmode Colors
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.3.0...v0.3.1)
+
 #### [v0.3.0] - Latest Release
 - **Added:** Category support for better tracker organization.
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.2.0...v0.3.0)
