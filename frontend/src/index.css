@@ -1,5 +1,78 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: light;
+}
+
 body {
   @apply bg-stone-50 text-gray-800;
+}
+
+.app-shell,
+.app-sidebar,
+.app-main,
+.app-modal-card,
+.app-shell button,
+.app-shell input,
+.app-shell textarea,
+.app-shell select {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.dark-mode {
+  color-scheme: dark;
+}
+
+.dark-mode body,
+.theme-dark {
+  background-color: #0b1220;
+  color: #e5e7eb;
+}
+
+.theme-dark .app-sidebar,
+.theme-dark .app-main,
+.theme-dark .app-modal-card,
+.theme-dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.theme-dark .border-gray-50,
+.theme-dark .border-gray-100,
+.theme-dark .border-gray-200 {
+  border-color: #253042 !important;
+}
+
+.theme-dark .bg-\[\#fcfcfc\],
+.theme-dark .bg-stone-50,
+.theme-dark .bg-gray-50,
+.theme-dark .bg-stone-100 {
+  background-color: #0f172a !important;
+}
+
+.theme-dark .text-stone-900,
+.theme-dark .text-stone-800,
+.theme-dark .text-stone-700,
+.theme-dark .text-stone-600,
+.theme-dark .text-gray-500,
+.theme-dark .text-gray-400,
+.theme-dark .text-gray-300,
+.theme-dark .text-white {
+  color: #e5e7eb !important;
+}
+
+.theme-dark .hover\:bg-gray-50:hover,
+.theme-dark .hover\:bg-gray-100:hover,
+.theme-dark .hover\:bg-stone-100:hover,
+.theme-dark .hover\:bg-stone-800:hover {
+  background-color: #1f2937 !important;
+}
+
+.theme-dark .bg-stone-900,
+.theme-dark .hover\:bg-stone-900:hover,
+.theme-dark .hover\:bg-stone-800:hover {
+  background-color: #374151 !important;
+}
+
+.theme-dark .text-rose-600 {
+  color: #fb7185 !important;
 }

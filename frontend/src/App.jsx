@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Activity,
   PlusCircle,
-  CheckCircle2
+  CheckCircle2,
+  Settings
 } from 'lucide-react';
 
 // Empty string means "same origin" — all API calls go to /trackers/… on the current host.
@@ -26,6 +27,12 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('anyhabit-theme');
+    return savedTheme === 'dark' ? 'dark' : 'light';
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const [trackers, setTrackers] = useState([]);
   const [selectedTrackerId, setSelectedTrackerId] = useState(null);
   
@@ -56,6 +63,11 @@ function App() {
   useEffect(() => {
     fetchTrackers();
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark-mode', theme === 'dark');
+    localStorage.setItem('anyhabit-theme', theme);
+  }, [theme]);
 
   const handleTrackerSubmit = async (e) => {
     e.preventDefault();
@@ -298,8 +310,8 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800">
-      <div className="w-72 border-r border-gray-100 p-6 bg-white flex flex-col z-10">
+    <div className={`app-shell flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800 ${theme === 'dark' ? 'theme-dark' : ''}`}>
+      <div className="app-sidebar w-72 border-r border-gray-100 p-6 bg-white flex flex-col z-10">
         <div className="flex items-center gap-3 mb-8">
           <img src="/AnyHabit.png" alt="AnyHabit Logo" className="w-8 h-8 rounded-lg object-cover" />
           <h1 className="text-xl font-bold tracking-tight">AnyHabit</h1>
@@ -337,9 +349,17 @@ function App() {
             ))
           )}
         </ul>
+
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="mt-5 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-stone-800 transition-colors"
+        >
+          <Settings size={16} />
+          <span>Settings</span>
+        </button>
       </div>
 
-      <div className="flex-1 flex flex-col bg-[#fcfcfc] overflow-hidden">
+      <div className="app-main flex-1 flex flex-col bg-[#fcfcfc] overflow-hidden">
         {selectedTracker ? (
           <>
             <header className="px-10 pt-10 pb-6 flex flex-col shrink-0">
@@ -547,7 +567,7 @@ function App() {
 
       {isLogModalOpen && (
         <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm border border-gray-100">
+          <div className="app-modal-card bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm border border-gray-100">
             <h3 className="text-lg font-bold mb-1 text-stone-900">Log Activity</h3>
             <p className="text-sm text-gray-500 mb-5">Record your progress for {selectedTracker?.name}</p>
             <form onSubmit={handleLogSubmit}>
@@ -577,7 +597,7 @@ function App() {
 
       {isTrackerModalOpen && (
         <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="app-modal-card bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-hide">
             <h3 className="text-xl font-bold mb-6 text-stone-900">
               {trackerFormData.id ? 'Edit Tracker' : 'New Tracker'}
             </h3>
@@ -647,6 +667,68 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isSettingsOpen && (
+        <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="app-modal-card bg-white p-8 rounded-3xl shadow-xl w-full max-w-lg border border-gray-100">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-stone-900">Settings</h3>
+                <p className="text-sm text-gray-500 mt-1">Personalize your AnyHabit experience.</p>
+              </div>
+              <button
+                onClick={() => setIsSettingsOpen(false)}
+                className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mb-7">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Theme</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTheme('light')}
+                  className={`rounded-2xl border p-4 text-left transition-colors ${
+                    theme === 'light' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-stone-800">Lightmode</p>
+                  <p className="text-xs text-gray-500 mt-1">Bright background with soft contrast</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('dark')}
+                  className={`rounded-2xl border p-4 text-left transition-colors ${
+                    theme === 'dark' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-stone-800">Darkmode</p>
+                  <p className="text-xs text-gray-500 mt-1">Dimmed interface for low-light sessions</p>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">About This Website</h4>
+              <div className="rounded-2xl border border-gray-200 p-4 bg-stone-50">
+                <p className="text-sm text-stone-700 leading-relaxed">
+                  This is AnyHabit, made by Bebedi as an open source project.
+                </p>
+                <a
+                  href="https://github.com/Sparths/AnyHabit"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block mt-3 text-sm font-medium text-stone-900 hover:underline"
+                >
+                  https://github.com/Sparths/AnyHabit
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}
