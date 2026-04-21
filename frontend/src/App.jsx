@@ -459,7 +459,7 @@ function App() {
                         <div>
                           <div className="font-medium text-stone-800 flex items-center gap-1.5">
                             <CheckCircle2 size={14} className="text-stone-400" /> 
-                            {log.amount} {selectedTracker.unit}s
+                            {log.amount} {selectedTracker.unit}
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5">
                             {new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
