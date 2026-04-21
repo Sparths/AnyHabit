@@ -19,7 +19,42 @@ def ensure_tracker_category_column():
             )
 
 
+def ensure_tracker_impact_columns():
+    with engine.begin() as connection:
+        columns = connection.execute(text("PRAGMA table_info(trackers)"))
+        column_names = {row[1] for row in columns}
+
+        if "impact_amount" not in column_names:
+            connection.execute(
+                text("ALTER TABLE trackers ADD COLUMN impact_amount FLOAT DEFAULT 0.0")
+            )
+        if "impact_unit" not in column_names:
+            connection.execute(
+                text("ALTER TABLE trackers ADD COLUMN impact_unit VARCHAR DEFAULT '$'")
+            )
+        if "impact_per" not in column_names:
+            connection.execute(
+                text("ALTER TABLE trackers ADD COLUMN impact_per VARCHAR DEFAULT 'day'")
+            )
+
+        if "money_saved_amount" in column_names:
+            connection.execute(
+                text(
+                    "UPDATE trackers SET impact_amount = COALESCE(money_saved_amount, 0.0) "
+                    "WHERE impact_amount IS NULL OR impact_amount = 0.0"
+                )
+            )
+        if "money_saved_per" in column_names:
+            connection.execute(
+                text(
+                    "UPDATE trackers SET impact_per = COALESCE(money_saved_per, 'day') "
+                    "WHERE impact_per IS NULL OR impact_per = ''"
+                )
+            )
+
+
 ensure_tracker_category_column()
+ensure_tracker_impact_columns()
 
 app = FastAPI(title="AnyHabit API")
 
@@ -97,8 +132,9 @@ def edit_tracker(tracker_id: int, entry: schemas.TrackerBase, db: Session = Depe
     db_tracker.name = entry.name
     db_tracker.category = entry.category
     db_tracker.type = entry.type
-    db_tracker.money_saved_amount = entry.money_saved_amount
-    db_tracker.money_saved_per = entry.money_saved_per
+    db_tracker.impact_amount = entry.impact_amount
+    db_tracker.impact_unit = entry.impact_unit
+    db_tracker.impact_per = entry.impact_per
     db_tracker.unit = entry.unit
     db_tracker.units_per_amount = entry.units_per_amount
     db_tracker.units_per = entry.units_per
