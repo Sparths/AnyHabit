@@ -7,8 +7,9 @@ class TrackerBase(BaseModel):
     name: str
     category: str = "General"
     type: str 
-    money_saved_amount: float = 0.0
-    money_saved_per: str = "day" 
+    impact_amount: float = 0.0
+    impact_unit: str = "$"
+    impact_per: str = "day" 
     unit: str
     units_per_amount: float = 0.0
     units_per: str = "day"

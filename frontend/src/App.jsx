@@ -71,7 +71,7 @@ function App() {
   const typeMenuRef = useRef(null);
   const [trackerFormData, setTrackerFormData] = useState({
     id: null, name: '', category: 'General', type: 'quit', unit: '',
-    money_saved_amount: 0.0, money_saved_per: 'day',
+    impact_amount: 0.0, impact_unit: '$', impact_per: 'day',
     units_per_amount: 0.0, units_per: 'day', is_active: true
   });
 
@@ -126,9 +126,10 @@ function App() {
       category: trackerFormData.category.trim() || 'General',
       type: trackerFormData.type,
       unit: isBoolean ? 'Times' :trackerFormData.unit,
-      money_saved_amount: isBoolean ? 0.0 : parseFloat(trackerFormData.money_saved_amount), 
-      money_saved_per: trackerFormData.money_saved_per,
-      units_per_amount: isBoolean ? 1.0 : parseFloat(trackerFormData.units_per_amount), 
+      impact_amount: isBoolean ? 0.0 : (parseFloat(trackerFormData.impact_amount) || 0.0), 
+      impact_unit: isBoolean ? '$' : ((trackerFormData.impact_unit || '$').trim() || '$'),
+      impact_per: trackerFormData.impact_per,
+      units_per_amount: isBoolean ? 1.0 : (parseFloat(trackerFormData.units_per_amount) || 0.0), 
       units_per: trackerFormData.units_per,
       is_active: trackerFormData.is_active
     };
@@ -180,7 +181,7 @@ function App() {
       setIsCreatingCategory(false);
       setTrackerFormData({
         id: null, name: '', category: 'General', type: 'quit', unit: '',
-        money_saved_amount: 0, money_saved_per: 'day',
+        impact_amount: 0, impact_unit: '$', impact_per: 'day',
         units_per_amount: 0, units_per: 'day', is_active: true
       });
     }
@@ -270,7 +271,7 @@ function App() {
     } catch (error) { console.error(error); }
   };
 
-  const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, savedMoney: 0 });
+  const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, impactValue: 0 });
   const [dailyProgress, setDailyProgress] = useState({ total: 0, target: 0, percentage: 0 });
 
   const existingCategories = (() => {
@@ -336,20 +337,20 @@ function App() {
       };
 
       const timeBasedUnits = selectedTracker.units_per_amount * getMultiplier(selectedTracker.units_per);
-      const timeBasedMoney = selectedTracker.money_saved_amount * getMultiplier(selectedTracker.money_saved_per);
+      const timeBasedImpact = selectedTracker.impact_amount * getMultiplier(selectedTracker.impact_per);
 
       if (selectedTracker.type === 'quit') {
         setCurrentMath({
           mainUnit: Math.max(0, timeBasedUnits).toFixed(1),
           targetUnit: 0,
-          savedMoney: Math.max(0, timeBasedMoney).toFixed(2)
+          impactValue: Math.max(0, timeBasedImpact).toFixed(2)
         });
       } else {
         const actualLoggedUnits = habitLogs.reduce((sum, log) => sum + log.amount, 0);
         setCurrentMath({
           mainUnit: actualLoggedUnits.toFixed(1),
           targetUnit: Math.max(0, timeBasedUnits).toFixed(1),
-          savedMoney: Math.max(0, timeBasedMoney).toFixed(2)
+          impactValue: Math.max(0, timeBasedImpact).toFixed(2)
         });
       }
     };
@@ -625,7 +626,7 @@ function App() {
                   )}
                 </div>
 
-                {selectedTracker.money_saved_amount > 0 && selectedTracker.type !== 'boolean' && (
+                {selectedTracker.impact_amount > 0 && selectedTracker.type !== 'boolean' && (
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
@@ -633,11 +634,11 @@ function App() {
                         {selectedTracker.type === 'quit' ? 'Saved' : 'Impact'}
                       </div>
                       <div className="text-4xl font-semibold tracking-tight">
-                        ${currentMath.savedMoney}
+                        {currentMath.impactValue} {selectedTracker.impact_unit || '$'}
                       </div>
                     </div>
                     <div className="text-sm text-gray-400 mt-4">
-                      Rate: ${selectedTracker.money_saved_amount} / {selectedTracker.money_saved_per}
+                      Rate: {selectedTracker.impact_amount} {selectedTracker.impact_unit || '$'} / {selectedTracker.impact_per}
                     </div>
                   </div>
                 )}
@@ -773,7 +774,7 @@ function App() {
                               }
                             </span>
                             {tracker.type !== 'boolean' && (
-                              <span>Rate: ${tracker.money_saved_amount} / {tracker.money_saved_per}</span>
+                              <span>Rate: {tracker.impact_amount} {tracker.impact_unit || '$'} / {tracker.impact_per}</span>
                             )}
                             <span>Started: {new Date(tracker.start_date.endsWith('Z') ? tracker.start_date : `${tracker.start_date}Z`).toLocaleDateString()}</span>
                           </div>
@@ -980,15 +981,13 @@ function App() {
               {trackerFormData.type !== 'boolean' && (
               <div className="p-4 rounded-2xl border border-gray-100 bg-white">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Financial Value
+                  Secondary Impact
                 </label>
                 <div className="flex gap-3">
-                  <div className="relative w-full">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                    <input type="number" step="0.01" value={trackerFormData.money_saved_amount} onChange={(e) => setTrackerFormData({...trackerFormData, money_saved_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 pl-7 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
-                  </div>
+                  <input type="number" step="0.01" value={trackerFormData.impact_amount} onChange={(e) => setTrackerFormData({...trackerFormData, impact_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Amount"/>
+                  <input type="text" value={trackerFormData.impact_unit} onChange={(e) => setTrackerFormData({...trackerFormData, impact_unit: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Unit (e.g. kg CO2)"/>
                   <div className="flex items-center text-sm text-gray-400">per</div>
-                  <select value={trackerFormData.money_saved_per} onChange={(e) => setTrackerFormData({...trackerFormData, money_saved_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
+                  <select value={trackerFormData.impact_per} onChange={(e) => setTrackerFormData({...trackerFormData, impact_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
                     <option value="day">Day</option>
                     <option value="week">Week</option>
                     <option value="month">Month</option>
