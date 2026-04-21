@@ -49,6 +49,14 @@ body {
   background-color: #0f172a !important;
 }
 
+.theme-dark .bg-rose-50 {
+  background-color: #3f1d2e !important;
+}
+
+.theme-dark .bg-emerald-50 {
+  background-color: #11332a !important;
+}
+
 .theme-dark .text-stone-900,
 .theme-dark .text-stone-800,
 .theme-dark .text-stone-700,
@@ -75,4 +83,22 @@ body {
 
 .theme-dark .text-rose-600 {
   color: #fb7185 !important;
+}
+
+.theme-dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+.theme-dark .hover\:bg-white:hover,
+.theme-dark .hover\:bg-stone-50\/70:hover,
+.theme-dark .hover\:bg-stone-50:hover,
+.theme-dark .hover\:bg-stone-100\/60:hover,
+.theme-dark .hover\:bg-stone-100\/70:hover,
+.theme-dark .hover\:bg-stone-200:hover {
+  background-color: #1b2433 !important;
+}
+
+.theme-dark .category-count-badge {
+  background-color: #1c2433 !important;
+  color: #94a3b8 !important;
 }
