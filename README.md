@@ -5,6 +5,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
 [![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
+[![Discord](https://img.shields.io/badge/Community-Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/ajknBq5zcH)
 [![Live Demo](https://img.shields.io/badge/Demo-Live_Preview-FF4B4B?style=flat&logo=render)](https://sparths.github.io/anyhabit-demo/)
 
 **AnyHabit** is a streamlined, universal habit-tracking dashboard designed for **Raspberry Pi**, home servers, and **Docker** enthusiasts. It provides a minimalist interface to track positive growth or systematically reduce harmful routines.
@@ -14,7 +15,8 @@
 ## 📺 Preview & Updates
 
 > [!IMPORTANT]  
-> **Try it now:** [Explore the Live Demo Site](https://sparths.github.io/anyhabit-demo/)
+> **Try it now:** [Explore the Live Demo Site](https://sparths.github.io/anyhabit-demo/)  
+> **Join the Community:** [AnyHabit Discord Server](https://discord.gg/ajknBq5zcH) — Get support, showcase your work, and chat with fellow devs!
 
 ![AnyHabit Demo](assets/demo.gif)
 
@@ -67,7 +69,7 @@ AnyHabit is designed to be "up and running" in seconds. You do **not** need Node
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Sparths/AnyHabit.git
+git clone [https://github.com/Sparths/AnyHabit.git](https://github.com/Sparths/AnyHabit.git)
 cd AnyHabit
 
 # 2. Build and start everything
@@ -104,31 +106,16 @@ Open **http://localhost** (or your device's IP) in your browser.
 
 ---
 
-## 👨‍💻 Local Development
-
-If you wish to contribute or modify the code without Docker:
-
-### 🐍 Backend
-```bash
-cd backend
-pip install -r requirements.txt
-mkdir -p data
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### ⚛️ Frontend
-```bash
-cd frontend
-npm install
-VITE_API_URL=http://localhost:8000 npm run dev
-```
-
----
-
 ## 🤝 Community & Contributing
 
-AnyHabit is an open-source, community-driven project! We would absolutely love your input.
+AnyHabit is an open-source, community-driven project! 
 
+Join our **[Discord Server](https://discord.gg/ajknBq5zcH)** to:
+* 🛠️ Get help with your setup or projects.
+* 🚀 Showcase what you've built.
+* 💬 Chat with other programmers and contributors.
+
+**Other ways to help:**
 * **💡 Ideas:** [Open a Feature Request](https://github.com/Sparths/AnyHabit/issues)
 * **🐛 Bugs:** [Open a Bug Report](https://github.com/Sparths/AnyHabit/issues)
 * **💻 Code:** Check our [Contributing Guidelines](CONTRIBUTING.md)
