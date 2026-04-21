@@ -4,16 +4,46 @@
 [![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
+[![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
 
 **AnyHabit** is a streamlined, universal habit-tracking dashboard designed for **Raspberry Pi**, home servers, and **Docker** enthusiasts. It provides a minimalist interface to track positive growth or systematically reduce harmful routines.
 
 ---
 
-## 📺 Preview
+## 📺 Preview & Updates
 
 ![AnyHabit Demo](assets/demo.gif)
 
-*Watch how AnyHabit tracks your progress and savings in real-time.*
+<details>
+<summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
+
+#### [v0.3.0] - Latest Release
+- **Added:** Category support for better tracker organization.
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.2.0...v0.3.0)
+
+#### [v0.2.0] - UI Enhancement
+- **Added:** Full Dark Mode / Light Mode support.
+- **Added:** Dedicated Settings window for better customization.
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.1.1...v0.2.0)
+
+#### [v0.1.1] - Small Fixes
+- **Fixed:** Visual bug where an unnecessary 's' was appended to units.
+- **Added:** Timestamps showing exactly when a tracker was created.
+
+#### [v0.1.0] - Initial Release!
+- Launch of AnyHabit: Dual tracking modes, financial impact calculation, daily journal, and one-command Docker deployment.
+</details>
+
+---
+
+## ✨ Key Features
+
+* **Dual Tracking Modes:** Monitor positive routines or reduce harmful ones.
+* **Categories:** Organize your dashboard with custom categories.
+* **Dark Mode:** Seamlessly switch between Light and Dark themes.
+* **Financial Impact:** Automatically calculate money saved by avoiding negative habits.
+* **Daily Journal:** Log your mood and thoughts alongside your habits.
+* **Self-Hosted & Private:** Complete control over your data with SQLite and Docker.
 
 ---
 
@@ -25,7 +55,7 @@ AnyHabit is designed to be "up and running" in seconds. You do **not** need Node
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Sparths/AnyHabit.git
+git clone [https://github.com/Sparths/AnyHabit.git](https://github.com/Sparths/AnyHabit.git)
 cd AnyHabit
 
 # 2. Build and start everything
@@ -39,58 +69,54 @@ Open **http://localhost** (or your device's IP) in your browser.
 
 ---
 
-## ⚙️ Configuration (Optional)
+## ⚙️ Configuration
 
-By default, AnyHabit runs on **port 80**. If you need to change this (e.g., to run alongside other services on a Raspberry Pi), follow these steps:
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `APP_PORT` | The port on which the app is accessible | `80` |
+| `VITE_API_URL` | Backend URL (internal routing) | `http://localhost/api` |
 
+**To change the port:**
 1. Create an environment file: `cp .env.example .env`
 2. Edit `.env` and change `APP_PORT=8080`
-3. Restart with: `docker compose up -d`
+3. Restart: `docker compose up -d`
 
 ---
 
-## 🛠️ Architecture
+## 🛠️ Tech Stack
 
-AnyHabit uses a modern, high-performance stack:
-
-* **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12-slim).
-* **Frontend:** [React 19](https://react.dev/) served via [Nginx](https://www.nginx.com/).
-* **Styling:** [Tailwind CSS 4](https://tailwindcss.com/) for a lightweight, modern UI.
-* **Database:** [SQLite](https://www.sqlite.org/) for zero-config persistence.
-* **Reverse Proxy:** Integrated Nginx configuration to route API requests seamlessly.
-
----
-
-## 🤝 Community & Contributing
-
-AnyHabit is an open-source, community-driven project! We would absolutely love your input to make it even better. 
-
-* **💡 Have an idea?** We actively encourage feature requests! [Open a Feature Request](https://github.com/Sparths/AnyHabit/issues) to share your ideas and discuss them with the community.
-* **🐛 Found a bug?** Help us squash it by [Opening a Bug Report](https://github.com/Sparths/AnyHabit/issues).
-* **💻 Want to write code?** We welcome Pull Requests! Please check out our [Contributing Guidelines](CONTRIBUTING.md) to get your local environment set up.
-
-Whether it's a typo fix, a new feature, or a documentation update, all contributions are highly appreciated! Please ensure you follow our [Code of Conduct](CODE_OF_CONDUCT.md) when interacting with the community.
+* **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12-slim)
+* **Frontend:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+* **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
+* **Proxy:** [Nginx](https://www.nginx.com/) as a Reverse Proxy & Static File Server
 
 ---
 
 ## 👨‍💻 Local Development
 
-If you wish to modify the code and run it without Docker:
+If you wish to contribute or modify the code without Docker:
 
-### Backend
+### 🐍 Backend
 ```bash
-pip install -r backend/requirements.txt
-mkdir -p backend/data
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+cd backend
+pip install -r requirements.txt
+mkdir -p data
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-*Note: Make sure to install dependencies from `backend/requirements.txt`.*
 
-### Frontend
+### ⚛️ Frontend
 ```bash
 cd frontend
 npm install
-# Set API URL to point to your local backend
 VITE_API_URL=http://localhost:8000 npm run dev
 ```
 
-This addition explicitly tells visitors that they aren't just downloading a finished tool—they are invited to be part of the ongoing development process!
+---
+
+## 🤝 Community & Contributing
+
+AnyHabit is an open-source, community-driven project! We would absolutely love your input.
+
+* **💡 Ideas:** [Open a Feature Request](https://github.com/Sparths/AnyHabit/issues)
+* **🐛 Bugs:** [Open a Bug Report](https://github.com/Sparths/AnyHabit/issues)
+* **💻 Code:** Check our [Contributing Guidelines](CONTRIBUTING.md)
