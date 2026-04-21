@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Plus, 
   Pause, 
@@ -18,7 +18,8 @@ import {
   Activity,
   PlusCircle,
   CheckCircle2,
-  Settings
+  Settings,
+  ChevronDown
 } from 'lucide-react';
 
 // Empty string means "same origin" — all API calls go to /trackers/… on the current host.
@@ -35,10 +36,15 @@ function App() {
 
   const [trackers, setTrackers] = useState([]);
   const [selectedTrackerId, setSelectedTrackerId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [collapsedCategories, setCollapsedCategories] = useState({});
   
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const categoryMenuRef = useRef(null);
   const [trackerFormData, setTrackerFormData] = useState({
-    id: null, name: '', type: 'quit', unit: '',
+    id: null, name: '', category: 'General', type: 'quit', unit: '',
     money_saved_amount: 0.0, money_saved_per: 'day',
     units_per_amount: 0.0, units_per: 'day', is_active: true
   });
@@ -69,6 +75,17 @@ function App() {
     localStorage.setItem('anyhabit-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
+        setIsCategoryMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleTrackerSubmit = async (e) => {
     e.preventDefault();
     const isEdit = !!trackerFormData.id;
@@ -76,7 +93,10 @@ function App() {
     const method = isEdit ? 'PATCH' : 'POST';
 
     const payload = {
-      name: trackerFormData.name, type: trackerFormData.type, unit: trackerFormData.unit,
+      name: trackerFormData.name,
+      category: trackerFormData.category.trim() || 'General',
+      type: trackerFormData.type,
+      unit: trackerFormData.unit,
       money_saved_amount: parseFloat(trackerFormData.money_saved_amount), money_saved_per: trackerFormData.money_saved_per,
       units_per_amount: parseFloat(trackerFormData.units_per_amount), units_per: trackerFormData.units_per,
       is_active: trackerFormData.is_active
@@ -119,11 +139,15 @@ function App() {
   };
 
   const openTrackerModal = (tracker = null) => {
+    setIsCategoryMenuOpen(false);
     if (tracker) {
-      setTrackerFormData(tracker);
+      const normalizedCategory = (tracker.category || 'General').trim() || 'General';
+      setIsCreatingCategory(!existingCategories.includes(normalizedCategory));
+      setTrackerFormData({ ...tracker, category: normalizedCategory });
     } else {
+      setIsCreatingCategory(false);
       setTrackerFormData({
-        id: null, name: '', type: 'quit', unit: '',
+        id: null, name: '', category: 'General', type: 'quit', unit: '',
         money_saved_amount: 0, money_saved_per: 'day',
         units_per_amount: 0, units_per: 'day', is_active: true
       });
@@ -216,8 +240,44 @@ function App() {
 
   const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, savedMoney: 0 });
   const [dailyProgress, setDailyProgress] = useState({ total: 0, target: 0, percentage: 0 });
+
+  const existingCategories = (() => {
+    const categories = trackers.map((tracker) => (tracker.category || 'General').trim() || 'General');
+    const uniqueCategories = new Set(['General', ...categories]);
+    return [...uniqueCategories].sort((a, b) => a.localeCompare(b));
+  })();
+
+  const groupedTrackers = trackers.reduce((groups, tracker) => {
+    const category = (tracker.category || 'General').trim() || 'General';
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(tracker);
+    return groups;
+  }, {});
+
+  const sortedCategoryEntries = Object.entries(groupedTrackers)
+    .map(([category, items]) => ([
+      category,
+      [...items].sort((a, b) => a.name.localeCompare(b.name))
+    ]))
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  const selectedCategoryTrackers = useMemo(() => {
+    if (!selectedCategory) return [];
+    return trackers
+      .filter((tracker) => ((tracker.category || 'General').trim() || 'General') === selectedCategory)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [trackers, selectedCategory]);
   
   const selectedTracker = trackers.find(t => t.id === selectedTrackerId);
+  const activeCategory = selectedTracker
+    ? ((selectedTracker.category || 'General').trim() || 'General')
+    : selectedCategory;
+
+  useEffect(() => {
+    if (selectedCategory && !groupedTrackers[selectedCategory]) {
+      setSelectedCategory(null);
+    }
+  }, [groupedTrackers, selectedCategory]);
 
   useEffect(() => {
     if (!selectedTracker) return;
@@ -327,24 +387,58 @@ function App() {
           </button>
         </div>
 
-        <ul className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+        <ul className="space-y-4 flex-1 overflow-y-auto pr-1">
           {trackers.length === 0 ? (
             <li className="text-sm text-gray-400 text-center mt-6">No trackers yet.</li>
           ) : (
-            trackers.map((tracker) => (
-              <li 
-                key={tracker.id} 
-                onClick={() => setSelectedTrackerId(tracker.id)}
-                className={`group flex flex-col p-3 rounded-xl cursor-pointer transition-all ${
-                  selectedTrackerId === tracker.id 
-                  ? 'bg-stone-100 text-stone-900 font-medium' 
-                  : 'bg-transparent text-gray-500 hover:bg-gray-50 hover:text-stone-700'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="truncate pr-2">{tracker.name}</span>
-                  <span className={`flex-shrink-0 w-2 h-2 rounded-full ${tracker.is_active ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
+            sortedCategoryEntries.map(([category, items]) => (
+              <li key={category} className="pb-1">
+                <div className={`flex items-center gap-1 mb-2 rounded-lg px-1 py-0.5 transition-colors ${activeCategory === category ? 'bg-stone-50' : ''}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(category);
+                      setSelectedTrackerId(null);
+                      setCollapsedCategories((prev) => ({ ...prev, [category]: false }));
+                    }}
+                    className="flex-1 min-w-0 text-left flex items-center justify-between rounded-md px-1.5 py-1.5 hover:bg-stone-100/60 transition-colors"
+                  >
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-stone-500 truncate">{category}</span>
+                    <span className="ml-2 text-[10px] font-medium text-stone-400 rounded-full px-2 py-0.5 bg-stone-100/80">{items.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCollapsedCategories((prev) => ({ ...prev, [category]: !prev[category] }))}
+                    className="w-7 h-7 rounded-md text-gray-400 hover:text-stone-700 hover:bg-stone-100/70 flex items-center justify-center transition-colors"
+                    aria-label={`${collapsedCategories[category] ? 'Expand' : 'Collapse'} ${category}`}
+                  >
+                    <ChevronDown size={14} className={`transition-transform ${collapsedCategories[category] ? '-rotate-90' : ''}`} />
+                  </button>
                 </div>
+
+                {!collapsedCategories[category] && (
+                  <ul className="space-y-1 pl-4 pr-1 border-l border-stone-200/70 ml-2">
+                    {items.map((tracker) => (
+                      <li 
+                        key={tracker.id} 
+                        onClick={() => {
+                          setSelectedTrackerId(tracker.id);
+                          setSelectedCategory(category);
+                        }}
+                        className={`group flex flex-col px-2.5 py-2 rounded-lg cursor-pointer transition-all ${
+                          selectedTrackerId === tracker.id 
+                          ? 'bg-stone-100 text-stone-900 font-medium' 
+                          : 'text-gray-500 hover:bg-stone-50 hover:text-stone-700'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="truncate pr-2">{tracker.name}</span>
+                          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${tracker.is_active ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))
           )}
@@ -367,6 +461,16 @@ function App() {
                 <div>
                   <div className="flex items-center gap-3 mb-1">
                     <h2 className="text-3xl font-bold tracking-tight">{selectedTracker.name}</h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory((selectedTracker.category || 'General').trim() || 'General');
+                        setSelectedTrackerId(null);
+                      }}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+                    >
+                      {(selectedTracker.category || 'General').trim() || 'General'}
+                    </button>
                     <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${selectedTracker.type === 'quit' ? 'bg-rose-50 text-rose-600' : 'bg-stone-100 text-stone-600'}`}>
                       {selectedTracker.type}
                     </span>
@@ -556,6 +660,60 @@ function App() {
               </div>
             </div>
           </>
+        ) : selectedCategory ? (
+          <div className="flex-1 overflow-y-auto px-10 pt-10 pb-10">
+            <div className="mb-7">
+              <h2 className="text-3xl font-bold tracking-tight text-stone-900">{selectedCategory}</h2>
+              <p className="text-sm text-gray-500 mt-2">
+                {selectedCategoryTrackers.length} tracker{selectedCategoryTrackers.length === 1 ? '' : 's'} in this category.
+              </p>
+            </div>
+
+            {selectedCategoryTrackers.length === 0 ? (
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400">
+                No trackers in this category.
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                <ul className="divide-y divide-gray-100">
+                  {selectedCategoryTrackers.map((tracker) => (
+                    <li
+                      key={tracker.id}
+                      className="px-5 py-4 hover:bg-stone-50/70 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-base font-semibold text-stone-900 truncate">{tracker.name}</h3>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${tracker.type === 'quit' ? 'bg-rose-50 text-rose-600' : 'bg-stone-100 text-stone-600'}`}>
+                              {tracker.type}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${tracker.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                              {tracker.is_active ? 'Active' : 'Stopped'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-500">
+                            <span>{tracker.type === 'quit' ? 'Avoid' : 'Goal'}: {tracker.units_per_amount} {tracker.unit} / {tracker.units_per}</span>
+                            <span>Rate: ${tracker.money_saved_amount} / {tracker.money_saved_per}</span>
+                            <span>Started: {new Date(tracker.start_date.endsWith('Z') ? tracker.start_date : `${tracker.start_date}Z`).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTrackerId(tracker.id)}
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-stone-700 hover:bg-white hover:border-stone-300 transition-colors"
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white m-4 rounded-3xl border border-gray-50">
             <Sprout size={48} strokeWidth={1} className="mb-4 text-gray-300" />
@@ -607,6 +765,66 @@ function App() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
                 <input type="text" required value={trackerFormData.name} onChange={(e) => setTrackerFormData({...trackerFormData, name: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Category</label>
+                <div className="space-y-2" ref={categoryMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm flex items-center justify-between text-stone-800"
+                  >
+                    <span className="truncate text-left">{isCreatingCategory ? 'Create new category' : (trackerFormData.category || 'General')}</span>
+                    <ChevronDown size={16} className={`text-gray-400 transition-transform ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isCategoryMenuOpen && (
+                    <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                      <ul className="max-h-48 overflow-y-auto py-1">
+                        {existingCategories.map((category) => (
+                          <li key={category}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCreatingCategory(false);
+                                setTrackerFormData({ ...trackerFormData, category });
+                                setIsCategoryMenuOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${trackerFormData.category === category && !isCreatingCategory ? 'bg-stone-100 text-stone-900' : 'text-stone-700 hover:bg-stone-50'}`}
+                            >
+                              {category}
+                            </button>
+                          </li>
+                        ))}
+                        <li>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCreatingCategory(true);
+                              setTrackerFormData({ ...trackerFormData, category: '' });
+                              setIsCategoryMenuOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 border-t border-gray-100"
+                          >
+                            + Create new category
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {isCreatingCategory && (
+                    <input
+                      type="text"
+                      required
+                      value={trackerFormData.category}
+                      onChange={(e) => setTrackerFormData({ ...trackerFormData, category: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"
+                      placeholder="e.g. Health"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
