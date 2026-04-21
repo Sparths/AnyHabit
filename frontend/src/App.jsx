@@ -404,7 +404,7 @@ function App() {
                     className="flex-1 min-w-0 text-left flex items-center justify-between rounded-md px-1.5 py-1.5 hover:bg-stone-100/60 transition-colors"
                   >
                     <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-stone-500 truncate">{category}</span>
-                    <span className="ml-2 text-[10px] font-medium text-stone-400 rounded-full px-2 py-0.5 bg-stone-100/80">{items.length}</span>
+                    <span className="category-count-badge ml-2 text-[10px] font-medium text-stone-400 rounded-full px-2 py-0.5 bg-stone-100/80">{items.length}</span>
                   </button>
                   <button
                     type="button"
