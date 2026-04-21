@@ -241,11 +241,11 @@ function App() {
   const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, savedMoney: 0 });
   const [dailyProgress, setDailyProgress] = useState({ total: 0, target: 0, percentage: 0 });
 
-  const existingCategories = useMemo(() => {
+  const existingCategories = (() => {
     const categories = trackers.map((tracker) => (tracker.category || 'General').trim() || 'General');
     const uniqueCategories = new Set(['General', ...categories]);
     return [...uniqueCategories].sort((a, b) => a.localeCompare(b));
-  }, [trackers]);
+  })();
 
   const groupedTrackers = trackers.reduce((groups, tracker) => {
     const category = (tracker.category || 'General').trim() || 'General';
