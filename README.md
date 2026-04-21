@@ -23,15 +23,19 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.4.0] - Latest Release
+#### [v0.5.0] - Latest Release
+- **Added:** Support custom impact units!
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.4.0...v0.5.0)
+
+#### [v0.4.0] - Logic Update
 - **Added:** New Tracker Type "Boolean"!
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.3.1...v0.4.0)
 
-#### [v0.3.1] - Latest Release
+#### [v0.3.1] - UI Enhancement
 - **Added:** Fix Darkmode Colors
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.3.0...v0.3.1)
 
-#### [v0.3.0] - Latest Release
+#### [v0.3.0] - UX Enhancement
 - **Added:** Category support for better tracker organization.
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.2.0...v0.3.0)
 
