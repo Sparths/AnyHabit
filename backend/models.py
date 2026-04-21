@@ -7,6 +7,7 @@ class Tracker(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    category = Column(String, default="General", index=True)
     type = Column(String)
     start_date = Column(DateTime, default=datetime.utcnow)
     money_saved_amount = Column(Float, default=0.0)

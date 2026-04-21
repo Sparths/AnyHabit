@@ -5,6 +5,7 @@ from typing import Optional
 
 class TrackerBase(BaseModel):
     name: str
+    category: str = "General"
     type: str 
     money_saved_amount: float = 0.0
     money_saved_per: str = "day" 

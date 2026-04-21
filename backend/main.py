@@ -1,11 +1,25 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from . import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, SessionLocal
 from typing import List
 
 models.Base.metadata.create_all(bind=engine)
+
+
+def ensure_tracker_category_column():
+    with engine.begin() as connection:
+        columns = connection.execute(text("PRAGMA table_info(trackers)"))
+        column_names = {row[1] for row in columns}
+        if "category" not in column_names:
+            connection.execute(
+                text("ALTER TABLE trackers ADD COLUMN category VARCHAR DEFAULT 'General'")
+            )
+
+
+ensure_tracker_category_column()
 
 app = FastAPI(title="AnyHabit API")
 
@@ -81,6 +95,7 @@ def edit_tracker(tracker_id: int, entry: schemas.TrackerBase, db: Session = Depe
         raise HTTPException(status_code=404, detail="Tracker not found")
 
     db_tracker.name = entry.name
+    db_tracker.category = entry.category
     db_tracker.type = entry.type
     db_tracker.money_saved_amount = entry.money_saved_amount
     db_tracker.money_saved_per = entry.money_saved_per
