@@ -12,6 +12,9 @@
 
 ## 📺 Preview & Updates
 
+> [!IMPORTANT]  
+> **Try it now:** [Explore the Live Demo Site](https://sparths.github.io/anyhabit-demo/)
+
 ![AnyHabit Demo](assets/demo.gif)
 
 <details>
