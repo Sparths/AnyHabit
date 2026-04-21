@@ -27,6 +27,30 @@ import {
 // For local development set VITE_API_URL=http://localhost:8000 (see README).
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+const isSamePeriod = (logDate, period) => {
+  const d1 = new Date(logDate);
+  const now = new Date();
+  
+  if (period === 'day') {
+    return d1.toDateString() === now.toDateString();
+  }
+  if (period === 'month') {
+    return d1.getMonth() === now.getMonth() && d1.getFullYear() === now.getFullYear();
+  }
+  if (period === 'year') {
+    return d1.getFullYear() === now.getFullYear();
+  }
+  if (period === 'week') {
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    return d1 >= startOfWeek && d1 < endOfWeek;
+  }
+  return false;
+};
+
 function App() {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('anyhabit-theme');
@@ -42,7 +66,9 @@ function App() {
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
   const categoryMenuRef = useRef(null);
+  const typeMenuRef = useRef(null);
   const [trackerFormData, setTrackerFormData] = useState({
     id: null, name: '', category: 'General', type: 'quit', unit: '',
     money_saved_amount: 0.0, money_saved_per: 'day',
@@ -80,6 +106,9 @@ function App() {
       if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
         setIsCategoryMenuOpen(false);
       }
+      if (typeMenuRef.current && !typeMenuRef.current.contains(event.target)) {
+        setIsTypeMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -91,14 +120,16 @@ function App() {
     const isEdit = !!trackerFormData.id;
     const url = isEdit ? `${API_URL}/trackers/${trackerFormData.id}/` : `${API_URL}/trackers/`;
     const method = isEdit ? 'PATCH' : 'POST';
-
+    const isBoolean = trackerFormData.type === 'boolean';
     const payload = {
       name: trackerFormData.name,
       category: trackerFormData.category.trim() || 'General',
       type: trackerFormData.type,
-      unit: trackerFormData.unit,
-      money_saved_amount: parseFloat(trackerFormData.money_saved_amount), money_saved_per: trackerFormData.money_saved_per,
-      units_per_amount: parseFloat(trackerFormData.units_per_amount), units_per: trackerFormData.units_per,
+      unit: isBoolean ? 'Times' :trackerFormData.unit,
+      money_saved_amount: isBoolean ? 0.0 : parseFloat(trackerFormData.money_saved_amount), 
+      money_saved_per: trackerFormData.money_saved_per,
+      units_per_amount: isBoolean ? 1.0 : parseFloat(trackerFormData.units_per_amount), 
+      units_per: trackerFormData.units_per,
       is_active: trackerFormData.is_active
     };
 
@@ -140,6 +171,7 @@ function App() {
 
   const openTrackerModal = (tracker = null) => {
     setIsCategoryMenuOpen(false);
+    setIsTypeMenuOpen(false);
     if (tracker) {
       const normalizedCategory = (tracker.category || 'General').trim() || 'General';
       setIsCreatingCategory(!existingCategories.includes(normalizedCategory));
@@ -323,15 +355,17 @@ function App() {
     };
 
     const calculateDailyProgress = () => {
-      if (selectedTracker.type !== 'build') return;
+      if (selectedTracker.type !== 'build' && selectedTracker.type !== 'boolean') return;
       
-      const today = new Date().toDateString();
-      const todayLogs = habitLogs.filter(log => {
+
+      const periodToCheck = selectedTracker.type === 'boolean' ? selectedTracker.units_per : 'day';
+
+      const periodLogs = habitLogs.filter(log => {
         const logDate = new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`);
-        return logDate.toDateString() === today;
+        return isSamePeriod(logDate, periodToCheck);
       });
-      
-      const todayTotal = todayLogs.reduce((sum, log) => sum + log.amount, 0);
+
+      const todayTotal = periodLogs.reduce((sum, log) => sum + log.amount, 0);
       
       let dailyTarget = selectedTracker.units_per_amount;
       if (selectedTracker.units_per === 'week') dailyTarget /= 7;
@@ -368,6 +402,14 @@ function App() {
       default: return <Meh size={size} />;
     }
   };
+
+  const trackerTypeOptions = [
+    { value: 'quit', label: 'Quit' },
+    { value: 'build', label: 'Build' },
+    { value: 'boolean', label: 'Yes/No (Boolean)' }
+  ];
+
+  const selectedTypeLabel = trackerTypeOptions.find((typeOption) => typeOption.value === trackerFormData.type)?.label || 'Quit';
 
   return (
     <div className={`app-shell flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800 ${theme === 'dark' ? 'theme-dark' : ''}`}>
@@ -480,11 +522,12 @@ function App() {
                   </div>
                   
                   <div className="flex flex-col gap-1 mt-3">
-                    <p className="flex items-center gap-2 text-sm text-gray-500">
-                      <Target size={14} /> 
-                      {selectedTracker.type === 'quit' ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}` 
-                       :`Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
-                    </p>
+                  <p className="flex items-center gap-2 text-sm text-gray-500">
+                    <Target size={14} /> 
+                    {selectedTracker.type === 'boolean' ? `${selectedTracker.units_per.charAt(0).toUpperCase() + selectedTracker.units_per.slice(1)} Habit` :
+                    selectedTracker.type === 'quit' ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}` 
+                    :`Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
+                  </p>
                     <p className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar size={14} /> 
                       Started: {new Date(selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`).toLocaleDateString()}
@@ -503,6 +546,21 @@ function App() {
                       <PlusCircle size={16} /> Log Activity
                     </button>
                   )}
+                  {selectedTracker.type === 'boolean' && dailyProgress.total < 1 && (
+                  <button 
+                    onClick={async () => { 
+                      await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: 1.0 })
+                      });
+                      fetchHabitLogs(selectedTracker.id);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
+                  >
+                    <CheckCircle2 size={16} /> Mark as Done
+                  </button>
+                )}
                   <button 
                     onClick={() => toggleTrackerStatus(selectedTracker)}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
@@ -530,30 +588,44 @@ function App() {
                     {selectedTracker.type === 'quit' ? <TrendingUp size={16} /> : <Activity size={16} />} 
                     {selectedTracker.type === 'quit' ? 'Avoided' : 'Accomplished'}
                   </div>
-                  <div className="flex items-end gap-2">
-                    <div className="text-4xl font-semibold tracking-tight">
-                      {currentMath.mainUnit}
+                  {selectedTracker.type === 'boolean' ? (
+                    <div className="mt-4 flex items-center gap-3">
+                      {dailyProgress.total >= 1 ? (
+                        <div className="text-emerald-500 flex items-center gap-2 font-medium text-lg">
+                          <CheckCircle2 size={24} /> Done for this {selectedTracker.units_per}!                        
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 font-medium text-lg">Not completed yet</div>
+                      )}
                     </div>
-                    <div className="text-lg text-gray-400 mb-1">{selectedTracker.unit}</div>
-                  </div>
-                  
-                  {selectedTracker.type === 'build' && (
-                    <div className="mt-6">
-                      <div className="flex justify-between text-sm mb-2">
-                        <span className="font-medium text-stone-600">Today's Progress</span>
-                        <span className="text-stone-400">{dailyProgress.total.toFixed(1)} / {dailyProgress.target.toFixed(1)}</span>
+                  ) : (
+                    <>
+                      <div className="flex items-end gap-2">
+                        <div className="text-4xl font-semibold tracking-tight">
+                          {currentMath.mainUnit}
+                        </div>
+                        <div className="text-lg text-gray-400 mb-1">{selectedTracker.unit}</div>
                       </div>
-                      <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-stone-900 transition-all duration-500 ease-out" 
-                          style={{ width: `${dailyProgress.percentage}%` }}
-                        ></div>
-                      </div>
-                    </div>
+                      
+                      {selectedTracker.type === 'build' && (
+                        <div className="mt-6">
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="font-medium text-stone-600">Today's Progress</span>
+                            <span className="text-stone-400">{dailyProgress.total.toFixed(1)} / {dailyProgress.target.toFixed(1)}</span>
+                          </div>
+                          <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-stone-900 transition-all duration-500 ease-out" 
+                              style={{ width: `${dailyProgress.percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
-                {selectedTracker.money_saved_amount > 0 && (
+                {selectedTracker.money_saved_amount > 0 && selectedTracker.type !== 'boolean' && (
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
@@ -574,7 +646,7 @@ function App() {
 
             <div className="flex-1 overflow-y-auto px-10 pb-10 flex flex-col">
               
-              {selectedTracker.type === 'build' && habitLogs.length > 0 && (
+              {(selectedTracker.type === 'build' || selectedTracker.type === 'boolean') && habitLogs.length > 0 && (
                 <div className="w-full mb-8">
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h3>
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -583,7 +655,7 @@ function App() {
                         <div>
                           <div className="font-medium text-stone-800 flex items-center gap-1.5">
                             <CheckCircle2 size={14} className="text-stone-400" /> 
-                            {log.amount} {selectedTracker.unit}
+                            {selectedTracker.type === 'boolean' ? 'Completed' : `${log.amount} ${selectedTracker.unit}`}
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5">
                             {new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -694,8 +766,15 @@ function App() {
                           </div>
 
                           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-500">
-                            <span>{tracker.type === 'quit' ? 'Avoid' : 'Goal'}: {tracker.units_per_amount} {tracker.unit} / {tracker.units_per}</span>
-                            <span>Rate: ${tracker.money_saved_amount} / {tracker.money_saved_per}</span>
+                            <span>
+                              {tracker.type === 'boolean' 
+                                ? `${tracker.units_per.charAt(0).toUpperCase() + tracker.units_per.slice(1)} Habit`
+                                : `${tracker.type === 'quit' ? 'Avoid' : 'Goal'}: ${tracker.units_per_amount} ${tracker.unit} / ${tracker.units_per}`
+                              }
+                            </span>
+                            {tracker.type !== 'boolean' && (
+                              <span>Rate: ${tracker.money_saved_amount} / {tracker.money_saved_per}</span>
+                            )}
                             <span>Started: {new Date(tracker.start_date.endsWith('Z') ? tracker.start_date : `${tracker.start_date}Z`).toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -830,33 +909,75 @@ function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
-                  <select value={trackerFormData.type} onChange={(e) => setTrackerFormData({...trackerFormData, type: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
-                    <option value="quit">Quit</option>
-                    <option value="build">Build</option>
-                  </select>
+                  <div className="space-y-2" ref={typeMenuRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsTypeMenuOpen((prev) => !prev)}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm flex items-center justify-between text-stone-800"
+                    >
+                      <span className="truncate text-left">{selectedTypeLabel}</span>
+                      <ChevronDown size={16} className={`text-gray-400 transition-transform ${isTypeMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isTypeMenuOpen && (
+                      <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                        <ul className="max-h-48 overflow-y-auto py-1">
+                          {trackerTypeOptions.map((typeOption) => (
+                            <li key={typeOption.value}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTrackerFormData({ ...trackerFormData, type: typeOption.value });
+                                  setIsTypeMenuOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm transition-colors ${trackerFormData.type === typeOption.value ? 'bg-stone-100 text-stone-900' : 'text-stone-700 hover:bg-stone-50'}`}
+                              >
+                                {typeOption.label}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Unit</label>
                   <input type="text" required value={trackerFormData.unit} onChange={(e) => setTrackerFormData({...trackerFormData, unit: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="e.g. Pages"/>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl border border-gray-100 bg-white">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  {trackerFormData.type === 'quit' ? 'Usage to Avoid' : 'Target Goal'}
-                </label>
-                <div className="flex gap-3">
-                  <input type="number" step="0.1" value={trackerFormData.units_per_amount} onChange={(e) => setTrackerFormData({...trackerFormData, units_per_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
-                  <div className="flex items-center text-sm text-gray-400">per</div>
+              {trackerFormData.type === 'boolean' ? (
+                <div className="p-4 rounded-2xl border border-gray-100 bg-white">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Frequency
+                  </label>
                   <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({...trackerFormData, units_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
+                    <option value="day">Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                    <option value="year">Yearly</option>
                   </select>
                 </div>
-              </div>
-
+              ) : (
+                <div className="p-4 rounded-2xl border border-gray-100 bg-white">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    {trackerFormData.type === 'quit' ? 'Usage to Avoid' : 'Target Goal'}
+                  </label>
+                  <div className="flex gap-3">
+                    <input type="number" step="0.1" value={trackerFormData.units_per_amount} onChange={(e) => setTrackerFormData({...trackerFormData, units_per_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
+                    <div className="flex items-center text-sm text-gray-400">per</div>
+                    <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({...trackerFormData, units_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
+                      <option value="day">Day</option>
+                      <option value="week">Week</option>
+                      <option value="month">Month</option>
+                      <option value="year">Year</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              {trackerFormData.type !== 'boolean' && (
               <div className="p-4 rounded-2xl border border-gray-100 bg-white">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   Financial Value
@@ -875,6 +996,7 @@ function App() {
                   </select>
                 </div>
               </div>
+              )}
 
               <div className="flex justify-end gap-2 mt-6 pt-2">
                 <button type="button" onClick={() => setIsTrackerModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-xl transition-colors">
