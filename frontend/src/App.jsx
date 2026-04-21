@@ -358,11 +358,14 @@ function App() {
                   <div className="flex flex-col gap-1 mt-3">
                     <p className="flex items-center gap-2 text-sm text-gray-500">
                       <Target size={14} /> 
-                      Goal: {selectedTracker.units_per_amount} {selectedTracker.unit}s / {selectedTracker.units_per}
+                      {selectedTracker.type === 'quit' ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}` 
+                       :`Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
                     </p>
                     <p className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar size={14} /> 
                       Started: {new Date(selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`).toLocaleDateString()}
+                      &ensp;
+                      {new Date(selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
@@ -407,7 +410,7 @@ function App() {
                     <div className="text-4xl font-semibold tracking-tight">
                       {currentMath.mainUnit}
                     </div>
-                    <div className="text-lg text-gray-400 mb-1">{selectedTracker.unit}s</div>
+                    <div className="text-lg text-gray-400 mb-1">{selectedTracker.unit}</div>
                   </div>
                   
                   {selectedTracker.type === 'build' && (
