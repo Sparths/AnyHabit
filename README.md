@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.6.1] - Latest Release
+#### [v0.6.2] - Latest Release
+- **Added:** Historical Progress/Heatmap
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.1...v0.6.2)
+
+#### [v0.6.1] - Mobile Support
 - **Added:** Better Mobile Layout
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.0...v0.6.1)
 
