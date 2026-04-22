@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import models, schemas
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
 from .database import engine, SessionLocal
 from typing import List
 
@@ -80,6 +81,25 @@ def read_root():
 
 #Tracker
 
+#reset
+@app.post("/trackers/{tracker_id}/reset", response_model=schemas.Tracker)
+def reset_tracker(tracker_id: int, db: Session = Depends(get_db)):
+    db_tracker = db.query(models.Tracker).filter(models.Tracker.id == tracker_id).first()
+    if db_tracker is None:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+    
+    db_tracker.start_date = datetime.now(timezone.utc)
+    
+    relapse_log = models.JournalEntry(
+        tracker_id=tracker_id,
+        content="Logged a relapse. Timer was reset to zero.",
+        mood=1
+    )
+    db.add(relapse_log)
+    
+    db.commit()
+    db.refresh(db_tracker)
+    return db_tracker
 
 #Create
 @app.post("/trackers/", response_model=schemas.Tracker)

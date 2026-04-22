@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Plus, 
-  Pause, 
-  Play, 
-  Pencil, 
-  Trash2, 
-  Sprout, 
-  Target, 
-  Coins, 
+import {
+  Plus,
+  Pause,
+  Play,
+  Pencil,
+  Trash2,
+  Sprout,
+  Target,
+  Coins,
   Calendar,
   Frown,
   Annoyed,
@@ -19,7 +19,8 @@ import {
   PlusCircle,
   CheckCircle2,
   Settings,
-  ChevronDown
+  ChevronDown,
+  RotateCcw
 } from 'lucide-react';
 
 // Empty string means "same origin" — all API calls go to /trackers/… on the current host.
@@ -30,7 +31,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 const isSamePeriod = (logDate, period) => {
   const d1 = new Date(logDate);
   const now = new Date();
-  
+
   if (period === 'day') {
     return d1.toDateString() === now.toDateString();
   }
@@ -62,7 +63,7 @@ function App() {
   const [selectedTrackerId, setSelectedTrackerId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [collapsedCategories, setCollapsedCategories] = useState({});
-  
+
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -125,11 +126,11 @@ function App() {
       name: trackerFormData.name,
       category: trackerFormData.category.trim() || 'General',
       type: trackerFormData.type,
-      unit: isBoolean ? 'Times' :trackerFormData.unit,
-      impact_amount: isBoolean ? 0.0 : (parseFloat(trackerFormData.impact_amount) || 0.0), 
+      unit: isBoolean ? 'Times' : trackerFormData.unit,
+      impact_amount: isBoolean ? 0.0 : (parseFloat(trackerFormData.impact_amount) || 0.0),
       impact_unit: isBoolean ? '$' : ((trackerFormData.impact_unit || '$').trim() || '$'),
       impact_per: trackerFormData.impact_per,
-      units_per_amount: isBoolean ? 1.0 : (parseFloat(trackerFormData.units_per_amount) || 0.0), 
+      units_per_amount: isBoolean ? 1.0 : (parseFloat(trackerFormData.units_per_amount) || 0.0),
       units_per: trackerFormData.units_per,
       is_active: trackerFormData.is_active
     };
@@ -165,6 +166,19 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/trackers/${tracker.id}/${action}`, { method: 'PUT' });
       if (response.ok) fetchTrackers();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleResetTracker = async (trackerId) => {
+    if (!confirm("Are you sure you want to log a relapse? This will reset your streak and savings to zero.")) return;
+    try {
+      const response = await fetch(`${API_URL}/trackers/${trackerId}/reset`, { method: 'POST' });
+      if (response.ok) {
+        fetchTrackers();
+        fetchJournals(trackerId);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -210,7 +224,7 @@ function App() {
     if (selectedTrackerId) {
       fetchJournals(selectedTrackerId);
       fetchHabitLogs(selectedTrackerId);
-      setJournalFormData({ id: null, content: '', mood: 3 }); 
+      setJournalFormData({ id: null, content: '', mood: 3 });
     } else {
       setJournals([]);
       setHabitLogs([]);
@@ -300,7 +314,7 @@ function App() {
       .filter((tracker) => ((tracker.category || 'General').trim() || 'General') === selectedCategory)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [trackers, selectedCategory]);
-  
+
   const selectedTracker = trackers.find(t => t.id === selectedTrackerId);
   const activeCategory = selectedTracker
     ? ((selectedTracker.category || 'General').trim() || 'General')
@@ -320,44 +334,55 @@ function App() {
       const startDateString = selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`;
       const startDate = new Date(startDateString);
       const diffMs = now - startDate;
-      
+
       const msPerDay = 1000 * 60 * 60 * 24;
       const msPerWeek = msPerDay * 7;
-      const msPerMonth = msPerDay * 30.44; 
+      const msPerMonth = msPerDay * 30.44;
       const msPerYear = msPerDay * 365.25;
 
-      const getMultiplier = (period) => {
-        switch(period) {
-          case 'day': return diffMs / msPerDay;
-          case 'week': return diffMs / msPerWeek;
-          case 'month': return diffMs / msPerMonth;
-          case 'year': return diffMs / msPerYear;
-          default: return 0;
+      const getMsPerPeriod = (period) => {
+        switch (period) {
+          case 'day': return msPerDay;
+          case 'week': return msPerWeek;
+          case 'month': return msPerMonth;
+          case 'year': return msPerYear;
+          default: return msPerDay;
         }
       };
 
+      const getMultiplier = (period) => diffMs / getMsPerPeriod(period);
+
       const timeBasedUnits = selectedTracker.units_per_amount * getMultiplier(selectedTracker.units_per);
-      const timeBasedImpact = selectedTracker.impact_amount * getMultiplier(selectedTracker.impact_per);
 
       if (selectedTracker.type === 'quit') {
+        const timeBasedImpact = selectedTracker.impact_amount * getMultiplier(selectedTracker.impact_per);
         setCurrentMath({
           mainUnit: Math.max(0, timeBasedUnits).toFixed(1),
           targetUnit: 0,
           impactValue: Math.max(0, timeBasedImpact).toFixed(2)
         });
       } else {
+        // For 'Build', tie the impact strictly to the logged amount, not time passed.
         const actualLoggedUnits = habitLogs.reduce((sum, log) => sum + log.amount, 0);
+
+        // Figure out how much 1 logged unit is worth in terms of impact
+        const impactPerMs = selectedTracker.impact_amount / getMsPerPeriod(selectedTracker.impact_per);
+        const unitsPerMs = selectedTracker.units_per_amount > 0 ? selectedTracker.units_per_amount / getMsPerPeriod(selectedTracker.units_per) : 0;
+
+        const impactPerUnit = unitsPerMs > 0 ? impactPerMs / unitsPerMs : 0;
+        const actualImpact = actualLoggedUnits * impactPerUnit;
+
         setCurrentMath({
           mainUnit: actualLoggedUnits.toFixed(1),
           targetUnit: Math.max(0, timeBasedUnits).toFixed(1),
-          impactValue: Math.max(0, timeBasedImpact).toFixed(2)
+          impactValue: Math.max(0, actualImpact).toFixed(2)
         });
       }
     };
 
     const calculateDailyProgress = () => {
       if (selectedTracker.type !== 'build' && selectedTracker.type !== 'boolean') return;
-      
+
 
       const periodToCheck = selectedTracker.type === 'boolean' ? selectedTracker.units_per : 'day';
 
@@ -367,7 +392,7 @@ function App() {
       });
 
       const todayTotal = periodLogs.reduce((sum, log) => sum + log.amount, 0);
-      
+
       let dailyTarget = selectedTracker.units_per_amount;
       if (selectedTracker.units_per === 'week') dailyTarget /= 7;
       if (selectedTracker.units_per === 'month') dailyTarget /= 30.44;
@@ -382,14 +407,14 @@ function App() {
       });
     };
 
-    calculateSavings(); 
+    calculateSavings();
     calculateDailyProgress();
 
     const interval = setInterval(() => {
       calculateSavings();
       calculateDailyProgress();
-    }, 1000); 
-    
+    }, 1000);
+
     return () => clearInterval(interval);
   }, [selectedTracker, habitLogs]);
 
@@ -419,10 +444,10 @@ function App() {
           <img src="/AnyHabit.png" alt="AnyHabit Logo" className="w-8 h-8 rounded-lg object-cover" />
           <h1 className="text-xl font-bold tracking-tight">AnyHabit</h1>
         </div>
-        
+
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Trackers</h2>
-          <button 
+          <button
             onClick={() => openTrackerModal()}
             className="text-gray-400 hover:text-stone-900 transition-colors flex items-center justify-center"
           >
@@ -462,17 +487,16 @@ function App() {
                 {!collapsedCategories[category] && (
                   <ul className="space-y-1 pl-4 pr-1 border-l border-stone-200/70 ml-2">
                     {items.map((tracker) => (
-                      <li 
-                        key={tracker.id} 
+                      <li
+                        key={tracker.id}
                         onClick={() => {
                           setSelectedTrackerId(tracker.id);
                           setSelectedCategory(category);
                         }}
-                        className={`group flex flex-col px-2.5 py-2 rounded-lg cursor-pointer transition-all ${
-                          selectedTrackerId === tracker.id 
-                          ? 'bg-stone-100 text-stone-900 font-medium' 
-                          : 'text-gray-500 hover:bg-stone-50 hover:text-stone-700'
-                        }`}
+                        className={`group flex flex-col px-2.5 py-2 rounded-lg cursor-pointer transition-all ${selectedTrackerId === tracker.id
+                            ? 'bg-stone-100 text-stone-900 font-medium'
+                            : 'text-gray-500 hover:bg-stone-50 hover:text-stone-700'
+                          }`}
                       >
                         <div className="flex justify-between items-center">
                           <span className="truncate pr-2">{tracker.name}</span>
@@ -521,60 +545,68 @@ function App() {
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">Stopped</span>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col gap-1 mt-3">
-                  <p className="flex items-center gap-2 text-sm text-gray-500">
-                    <Target size={14} /> 
-                    {selectedTracker.type === 'boolean' ? `${selectedTracker.units_per.charAt(0).toUpperCase() + selectedTracker.units_per.slice(1)} Habit` :
-                    selectedTracker.type === 'quit' ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}` 
-                    :`Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
-                  </p>
                     <p className="flex items-center gap-2 text-sm text-gray-500">
-                      <Calendar size={14} /> 
+                      <Target size={14} />
+                      {selectedTracker.type === 'boolean' ? `${selectedTracker.units_per.charAt(0).toUpperCase() + selectedTracker.units_per.slice(1)} Habit` :
+                        selectedTracker.type === 'quit' ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`
+                          : `Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
+                    </p>
+                    <p className="flex items-center gap-2 text-sm text-gray-500">
+                      <Calendar size={14} />
                       Started: {new Date(selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`).toLocaleDateString()}
                       &ensp;
                       {new Date(selectedTracker.start_date.endsWith('Z') ? selectedTracker.start_date : `${selectedTracker.start_date}Z`).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   {selectedTracker.type === 'build' && (
-                    <button 
-                      onClick={() => { setLogFormData({amount: 1}); setIsLogModalOpen(true); }}
+                    <button
+                      onClick={() => { setLogFormData({ amount: 1 }); setIsLogModalOpen(true); }}
                       className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
                     >
                       <PlusCircle size={16} /> Log Activity
                     </button>
                   )}
                   {selectedTracker.type === 'boolean' && dailyProgress.total < 1 && (
-                  <button 
-                    onClick={async () => { 
-                      await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: 1.0 })
-                      });
-                      fetchHabitLogs(selectedTracker.id);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
-                  >
-                    <CheckCircle2 size={16} /> Mark as Done
-                  </button>
-                )}
-                  <button 
+                    <button
+                      onClick={async () => {
+                        await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ amount: 1.0 })
+                        });
+                        fetchHabitLogs(selectedTracker.id);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
+                    >
+                      <CheckCircle2 size={16} /> Mark as Done
+                    </button>
+                  )}
+                  {selectedTracker.type === 'quit' && (
+                    <button 
+                      onClick={() => handleResetTracker(selectedTracker.id)}
+                      className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-sm font-medium transition-colors mr-2"
+                    >
+                      <RotateCcw size={16} /> Log Relapse
+                    </button>
+                  )}
+                  <button
                     onClick={() => toggleTrackerStatus(selectedTracker)}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
                   >
-                    {selectedTracker.is_active ? <><Pause size={16}/> Pause</> : <><Play size={16}/> Resume</>}
+                    {selectedTracker.is_active ? <><Pause size={16} /> Pause</> : <><Play size={16} /> Resume</>}
                   </button>
-                  <button 
+                  <button
                     onClick={() => openTrackerModal(selectedTracker)}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
                   >
                     <Pencil size={16} /> Edit
                   </button>
-                  <button 
+                  <button
                     onClick={() => deleteTracker(selectedTracker.id)}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-medium transition-colors"
                   >
@@ -586,14 +618,14 @@ function App() {
               <div className="mt-8 grid grid-cols-2 gap-4">
                 <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
                   <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                    {selectedTracker.type === 'quit' ? <TrendingUp size={16} /> : <Activity size={16} />} 
+                    {selectedTracker.type === 'quit' ? <TrendingUp size={16} /> : <Activity size={16} />}
                     {selectedTracker.type === 'quit' ? 'Avoided' : 'Accomplished'}
                   </div>
                   {selectedTracker.type === 'boolean' ? (
                     <div className="mt-4 flex items-center gap-3">
                       {dailyProgress.total >= 1 ? (
                         <div className="text-emerald-500 flex items-center gap-2 font-medium text-lg">
-                          <CheckCircle2 size={24} /> Done for this {selectedTracker.units_per}!                        
+                          <CheckCircle2 size={24} /> Done for this {selectedTracker.units_per}!
                         </div>
                       ) : (
                         <div className="text-gray-400 font-medium text-lg">Not completed yet</div>
@@ -607,7 +639,7 @@ function App() {
                         </div>
                         <div className="text-lg text-gray-400 mb-1">{selectedTracker.unit}</div>
                       </div>
-                      
+
                       {selectedTracker.type === 'build' && (
                         <div className="mt-6">
                           <div className="flex justify-between text-sm mb-2">
@@ -615,8 +647,8 @@ function App() {
                             <span className="text-stone-400">{dailyProgress.total.toFixed(1)} / {dailyProgress.target.toFixed(1)}</span>
                           </div>
                           <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-stone-900 transition-all duration-500 ease-out" 
+                            <div
+                              className="h-full bg-stone-900 transition-all duration-500 ease-out"
                               style={{ width: `${dailyProgress.percentage}%` }}
                             ></div>
                           </div>
@@ -630,7 +662,7 @@ function App() {
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                     <div>
                       <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                        <Coins size={16} /> 
+                        <Coins size={16} />
                         {selectedTracker.type === 'quit' ? 'Saved' : 'Impact'}
                       </div>
                       <div className="text-4xl font-semibold tracking-tight">
@@ -646,7 +678,7 @@ function App() {
             </header>
 
             <div className="flex-1 overflow-y-auto px-10 pb-10 flex flex-col">
-              
+
               {(selectedTracker.type === 'build' || selectedTracker.type === 'boolean') && habitLogs.length > 0 && (
                 <div className="w-full mb-8">
                   <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h3>
@@ -655,15 +687,15 @@ function App() {
                       <div key={log.id} className="flex-shrink-0 bg-white border border-gray-100 rounded-2xl px-4 py-3 flex items-center gap-4 group transition-all hover:border-gray-200">
                         <div>
                           <div className="font-medium text-stone-800 flex items-center gap-1.5">
-                            <CheckCircle2 size={14} className="text-stone-400" /> 
+                            <CheckCircle2 size={14} className="text-stone-400" />
                             {selectedTracker.type === 'boolean' ? 'Completed' : `${log.amount} ${selectedTracker.unit}`}
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5">
-                            {new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            {new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                         <button onClick={() => deleteLog(log.id)} className="text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Trash2 size={14}/>
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     ))}
@@ -673,20 +705,20 @@ function App() {
 
               <div className="w-full bg-white border border-gray-100 rounded-3xl p-5 shadow-sm mb-8 transition-all focus-within:border-gray-300">
                 <form onSubmit={handleJournalSubmit}>
-                  <textarea 
+                  <textarea
                     required
                     value={journalFormData.content}
-                    onChange={(e) => setJournalFormData({...journalFormData, content: e.target.value})}
-                    className="w-full outline-none resize-none text-stone-800 placeholder-gray-400 bg-transparent text-base" 
-                    rows="2" 
+                    onChange={(e) => setJournalFormData({ ...journalFormData, content: e.target.value })}
+                    className="w-full outline-none resize-none text-stone-800 placeholder-gray-400 bg-transparent text-base"
+                    rows="2"
                     placeholder="Write a journal entry..."
                   ></textarea>
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
                     <div className="flex gap-1.5">
-                      {[1,2,3,4,5].map(m => (
-                        <button 
+                      {[1, 2, 3, 4, 5].map(m => (
+                        <button
                           key={m} type="button"
-                          onClick={() => setJournalFormData({...journalFormData, mood: m})}
+                          onClick={() => setJournalFormData({ ...journalFormData, mood: m })}
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${journalFormData.mood === m ? 'bg-stone-900 text-white' : 'bg-transparent text-gray-400 hover:bg-stone-100'}`}
                         >
                           {getMoodIcon(m, 16)}
@@ -722,8 +754,8 @@ function App() {
                           <span className="text-xs font-medium">{new Date(journal.timestamp.endsWith('Z') ? journal.timestamp : `${journal.timestamp}Z`).toLocaleString()}</span>
                         </div>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                          <button onClick={() => setJournalFormData(journal)} className="text-gray-400 hover:text-stone-600"><Pencil size={14}/></button>
-                          <button onClick={() => deleteJournal(journal.id)} className="text-gray-400 hover:text-rose-500"><Trash2 size={14}/></button>
+                          <button onClick={() => setJournalFormData(journal)} className="text-gray-400 hover:text-stone-600"><Pencil size={14} /></button>
+                          <button onClick={() => deleteJournal(journal.id)} className="text-gray-400 hover:text-rose-500"><Trash2 size={14} /></button>
                         </div>
                       </div>
                       <p className="text-stone-700 text-sm leading-relaxed whitespace-pre-wrap">{journal.content}</p>
@@ -768,7 +800,7 @@ function App() {
 
                           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-500">
                             <span>
-                              {tracker.type === 'boolean' 
+                              {tracker.type === 'boolean'
                                 ? `${tracker.units_per.charAt(0).toUpperCase() + tracker.units_per.slice(1)} Habit`
                                 : `${tracker.type === 'quit' ? 'Avoid' : 'Goal'}: ${tracker.units_per_amount} ${tracker.unit} / ${tracker.units_per}`
                               }
@@ -813,10 +845,10 @@ function App() {
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                   Amount ({selectedTracker?.unit}s)
                 </label>
-                <input 
-                  type="number" step="0.1" required 
-                  value={logFormData.amount} 
-                  onChange={(e) => setLogFormData({ amount: e.target.value })} 
+                <input
+                  type="number" step="0.1" required
+                  value={logFormData.amount}
+                  onChange={(e) => setLogFormData({ amount: e.target.value })}
                   className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-stone-400 bg-stone-50 text-base font-medium text-stone-800"
                 />
               </div>
@@ -839,12 +871,12 @@ function App() {
             <h3 className="text-xl font-bold mb-6 text-stone-900">
               {trackerFormData.id ? 'Edit Tracker' : 'New Tracker'}
             </h3>
-            
+
             <form onSubmit={handleTrackerSubmit} className="space-y-5">
-              
+
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Name</label>
-                <input type="text" required value={trackerFormData.name} onChange={(e) => setTrackerFormData({...trackerFormData, name: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
+                <input type="text" required value={trackerFormData.name} onChange={(e) => setTrackerFormData({ ...trackerFormData, name: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" />
               </div>
 
               <div>
@@ -945,7 +977,7 @@ function App() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Unit</label>
-                  <input type="text" required value={trackerFormData.unit} onChange={(e) => setTrackerFormData({...trackerFormData, unit: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="e.g. Pages"/>
+                  <input type="text" required value={trackerFormData.unit} onChange={(e) => setTrackerFormData({ ...trackerFormData, unit: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="e.g. Pages" />
                 </div>
               </div>
 
@@ -954,7 +986,7 @@ function App() {
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                     Frequency
                   </label>
-                  <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({...trackerFormData, units_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
+                  <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({ ...trackerFormData, units_per: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
                     <option value="day">Daily</option>
                     <option value="week">Weekly</option>
                     <option value="month">Monthly</option>
@@ -967,9 +999,9 @@ function App() {
                     {trackerFormData.type === 'quit' ? 'Usage to Avoid' : 'Target Goal'}
                   </label>
                   <div className="flex gap-3">
-                    <input type="number" step="0.1" value={trackerFormData.units_per_amount} onChange={(e) => setTrackerFormData({...trackerFormData, units_per_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"/>
+                    <input type="number" step="0.1" value={trackerFormData.units_per_amount} onChange={(e) => setTrackerFormData({ ...trackerFormData, units_per_amount: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" />
                     <div className="flex items-center text-sm text-gray-400">per</div>
-                    <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({...trackerFormData, units_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
+                    <select value={trackerFormData.units_per} onChange={(e) => setTrackerFormData({ ...trackerFormData, units_per: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
                       <option value="day">Day</option>
                       <option value="week">Week</option>
                       <option value="month">Month</option>
@@ -979,22 +1011,22 @@ function App() {
                 </div>
               )}
               {trackerFormData.type !== 'boolean' && (
-              <div className="p-4 rounded-2xl border border-gray-100 bg-white">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Secondary Impact
-                </label>
-                <div className="flex gap-3">
-                  <input type="number" step="0.01" value={trackerFormData.impact_amount} onChange={(e) => setTrackerFormData({...trackerFormData, impact_amount: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Amount"/>
-                  <input type="text" value={trackerFormData.impact_unit} onChange={(e) => setTrackerFormData({...trackerFormData, impact_unit: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Unit (e.g. kg CO2)"/>
-                  <div className="flex items-center text-sm text-gray-400">per</div>
-                  <select value={trackerFormData.impact_per} onChange={(e) => setTrackerFormData({...trackerFormData, impact_per: e.target.value})} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
-                    <option value="day">Day</option>
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                    <option value="year">Year</option>
-                  </select>
+                <div className="p-4 rounded-2xl border border-gray-100 bg-white">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Secondary Impact
+                  </label>
+                  <div className="flex gap-3">
+                    <input type="number" step="0.01" value={trackerFormData.impact_amount} onChange={(e) => setTrackerFormData({ ...trackerFormData, impact_amount: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Amount" />
+                    <input type="text" value={trackerFormData.impact_unit} onChange={(e) => setTrackerFormData({ ...trackerFormData, impact_unit: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm" placeholder="Unit (e.g. kg CO2)" />
+                    <div className="flex items-center text-sm text-gray-400">per</div>
+                    <select value={trackerFormData.impact_per} onChange={(e) => setTrackerFormData({ ...trackerFormData, impact_per: e.target.value })} className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm">
+                      <option value="day">Day</option>
+                      <option value="week">Week</option>
+                      <option value="month">Month</option>
+                      <option value="year">Year</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
               )}
 
               <div className="flex justify-end gap-2 mt-6 pt-2">
@@ -1032,9 +1064,8 @@ function App() {
                 <button
                   type="button"
                   onClick={() => setTheme('light')}
-                  className={`rounded-2xl border p-4 text-left transition-colors ${
-                    theme === 'light' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`rounded-2xl border p-4 text-left transition-colors ${theme === 'light' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <p className="text-sm font-semibold text-stone-800">Lightmode</p>
                   <p className="text-xs text-gray-500 mt-1">Bright background with soft contrast</p>
@@ -1042,9 +1073,8 @@ function App() {
                 <button
                   type="button"
                   onClick={() => setTheme('dark')}
-                  className={`rounded-2xl border p-4 text-left transition-colors ${
-                    theme === 'dark' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`rounded-2xl border p-4 text-left transition-colors ${theme === 'dark' ? 'border-stone-800 bg-stone-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <p className="text-sm font-semibold text-stone-800">Darkmode</p>
                   <p className="text-xs text-gray-500 mt-1">Dimmed interface for low-light sessions</p>
