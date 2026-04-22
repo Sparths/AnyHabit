@@ -22,8 +22,20 @@ import {
   ChevronDown,
   RotateCcw,
   Menu,
-  X
+  X,
+  Flame
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 // Empty string means "same origin" — all API calls go to /trackers/… on the current host.
 // When running via Docker (nginx proxy), this is the correct default.
@@ -52,6 +64,62 @@ const isSamePeriod = (logDate, period) => {
     return d1 >= startOfWeek && d1 < endOfWeek;
   }
   return false;
+};
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+const toUtcDateKey = (date) => {
+  const year = date.getUTCFullYear();
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getUTCDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseApiDate = (value) => {
+  if (!value) return new Date();
+  const normalized = value.endsWith('Z') ? value : `${value}Z`;
+  return new Date(normalized);
+};
+
+const formatShortDate = (date) =>
+  date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+const periodStart = (date, period) => {
+  const d = new Date(date);
+  d.setUTCHours(0, 0, 0, 0);
+
+  if (period === 'week') {
+    const weekday = d.getUTCDay();
+    d.setUTCDate(d.getUTCDate() - weekday);
+    return d;
+  }
+  if (period === 'month') {
+    d.setUTCDate(1);
+    return d;
+  }
+  if (period === 'year') {
+    d.setUTCMonth(0, 1);
+    return d;
+  }
+  return d;
+};
+
+const addPeriod = (date, period) => {
+  const d = new Date(date);
+  if (period === 'week') {
+    d.setUTCDate(d.getUTCDate() + 7);
+    return d;
+  }
+  if (period === 'month') {
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    return d;
+  }
+  if (period === 'year') {
+    d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return d;
+  }
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d;
 };
 
 function App() {
@@ -440,6 +508,183 @@ function App() {
 
   const selectedTypeLabel = trackerTypeOptions.find((typeOption) => typeOption.value === trackerFormData.type)?.label || 'Quit';
 
+  const dailyLogMap = useMemo(() => {
+    const map = new Map();
+    habitLogs.forEach((log) => {
+      const timestamp = parseApiDate(log.timestamp);
+      const key = toUtcDateKey(timestamp);
+      map.set(key, (map.get(key) || 0) + Number(log.amount || 0));
+    });
+    return map;
+  }, [habitLogs]);
+
+  const historicalChartData = useMemo(() => {
+    if (!selectedTracker) return [];
+
+    const now = new Date();
+    const lookbackDays = 120;
+    const startDate = new Date(now);
+    startDate.setUTCDate(startDate.getUTCDate() - (lookbackDays - 1));
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    if (selectedTracker.type === 'quit') {
+      const trackerStart = parseApiDate(selectedTracker.start_date);
+      trackerStart.setUTCHours(0, 0, 0, 0);
+
+      const points = [];
+      for (let i = 0; i < lookbackDays; i += 1) {
+        const cursor = new Date(startDate);
+        cursor.setUTCDate(startDate.getUTCDate() + i);
+
+        const daysSinceStart = Math.floor((cursor - trackerStart) / DAY_MS);
+        const streakDays = Math.max(0, daysSinceStart + 1);
+
+        points.push({
+          date: toUtcDateKey(cursor),
+          label: formatShortDate(cursor),
+          value: cursor >= trackerStart ? streakDays : 0
+        });
+      }
+      return points;
+    }
+
+    let runningTotal = 0;
+    const points = [];
+    for (let i = 0; i < lookbackDays; i += 1) {
+      const cursor = new Date(startDate);
+      cursor.setUTCDate(startDate.getUTCDate() + i);
+      const key = toUtcDateKey(cursor);
+      const dailyAmount = dailyLogMap.get(key) || 0;
+      runningTotal += dailyAmount;
+
+      points.push({
+        date: key,
+        label: formatShortDate(cursor),
+        value: dailyAmount,
+        cumulative: Number(runningTotal.toFixed(2))
+      });
+    }
+    return points;
+  }, [selectedTracker, dailyLogMap]);
+
+  const streakStats = useMemo(() => {
+    if (!selectedTracker) {
+      return { current: 0, longest: 0, periodLabel: 'days' };
+    }
+
+    if (selectedTracker.type === 'quit') {
+      const now = new Date();
+      const trackerStart = parseApiDate(selectedTracker.start_date);
+      const current = Math.max(0, Math.floor((now - trackerStart) / DAY_MS));
+
+      const relapseMoments = journals
+        .filter((entry) => (entry.content || '').toLowerCase().includes('relapse'))
+        .map((entry) => parseApiDate(entry.timestamp))
+        .sort((a, b) => a - b);
+
+      let longest = current;
+      for (let i = 1; i < relapseMoments.length; i += 1) {
+        const spanDays = Math.floor((relapseMoments[i] - relapseMoments[i - 1]) / DAY_MS);
+        longest = Math.max(longest, spanDays);
+      }
+
+      return { current, longest, periodLabel: 'days smoke-free' };
+    }
+
+    const streakPeriod =
+      selectedTracker.type === 'boolean' || selectedTracker.type === 'build'
+        ? selectedTracker.units_per
+        : 'day';
+    const threshold =
+      selectedTracker.type === 'boolean'
+        ? 1
+        : selectedTracker.type === 'build'
+          ? Math.max(0, Number(selectedTracker.units_per_amount || 0))
+          : 0.0001;
+
+    const byPeriod = new Map();
+    habitLogs.forEach((log) => {
+      const ts = parseApiDate(log.timestamp);
+      const key = toUtcDateKey(periodStart(ts, streakPeriod));
+      byPeriod.set(key, (byPeriod.get(key) || 0) + Number(log.amount || 0));
+    });
+
+    const trackerStart = periodStart(parseApiDate(selectedTracker.start_date), streakPeriod);
+    const todayPeriod = periodStart(new Date(), streakPeriod);
+
+    let cursor = new Date(trackerStart);
+    let longest = 0;
+    let running = 0;
+    const completedPeriods = [];
+
+    while (cursor <= todayPeriod) {
+      const key = toUtcDateKey(cursor);
+      const amount = byPeriod.get(key) || 0;
+      const done = amount >= threshold;
+      completedPeriods.push(done);
+
+      if (done) {
+        running += 1;
+        longest = Math.max(longest, running);
+      } else {
+        running = 0;
+      }
+
+      cursor = addPeriod(cursor, streakPeriod);
+    }
+
+    let current = 0;
+    for (let i = completedPeriods.length - 1; i >= 0; i -= 1) {
+      if (!completedPeriods[i]) break;
+      current += 1;
+    }
+
+    const periodLabel =
+      streakPeriod === 'day'
+        ? 'days'
+        : streakPeriod === 'week'
+          ? 'weeks'
+          : streakPeriod === 'month'
+            ? 'months'
+            : 'years';
+
+    return { current, longest, periodLabel };
+  }, [selectedTracker, habitLogs, journals]);
+
+  const buildHeatmap = useMemo(() => {
+    if (!selectedTracker || selectedTracker.type !== 'build') return null;
+
+    const days = 168;
+    const end = new Date();
+    end.setUTCHours(0, 0, 0, 0);
+
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+    const alignedStart = new Date(start);
+    alignedStart.setUTCDate(start.getUTCDate() - start.getUTCDay());
+
+    const cells = [];
+    let cursor = new Date(alignedStart);
+    while (cursor <= end) {
+      const key = toUtcDateKey(cursor);
+      const amount = cursor < start ? 0 : (dailyLogMap.get(key) || 0);
+      cells.push({
+        date: key,
+        amount,
+        isFiller: cursor < start
+      });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    const maxAmount = Math.max(0, ...cells.map((cell) => cell.amount));
+    const columns = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      columns.push(cells.slice(i, i + 7));
+    }
+
+    return { columns, maxAmount };
+  }, [selectedTracker, dailyLogMap]);
+
   return (
     <div className={`app-shell flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800 ${theme === 'dark' ? 'theme-dark' : ''}`}>
       {isSidebarOpen && (
@@ -544,8 +789,8 @@ function App() {
 
       <div className="app-main flex-1 flex flex-col bg-[#fcfcfc] overflow-hidden">
         {selectedTracker ? (
-          <>
-            <header className="px-4 md:px-10 pt-6 md:pt-10 pb-6 flex flex-col shrink-0">
+          <div className="flex-1 overflow-y-auto">
+            <header className="px-4 md:px-10 pt-6 md:pt-10 pb-6 flex flex-col">
               <div className="flex flex-col xl:flex-row justify-between items-start w-full gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
@@ -687,6 +932,25 @@ function App() {
                   )}
                 </div>
 
+                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                  <div className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
+                    <Flame size={16} />
+                    Streaks
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div className="rounded-2xl bg-stone-50 border border-gray-100 p-4">
+                      <div className="text-xs uppercase tracking-wider font-semibold text-gray-400">Current</div>
+                      <div className="text-3xl font-semibold text-stone-900 mt-1">{streakStats.current}</div>
+                      <div className="text-xs text-gray-500 mt-1">{streakStats.periodLabel}</div>
+                    </div>
+                    <div className="rounded-2xl bg-stone-50 border border-gray-100 p-4">
+                      <div className="text-xs uppercase tracking-wider font-semibold text-gray-400">Longest</div>
+                      <div className="text-3xl font-semibold text-stone-900 mt-1">{streakStats.longest}</div>
+                      <div className="text-xs text-gray-500 mt-1">{streakStats.periodLabel}</div>
+                    </div>
+                  </div>
+                </div>
+
                 {selectedTracker.impact_amount > 0 && selectedTracker.type !== 'boolean' && (
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                     <div>
@@ -706,7 +970,89 @@ function App() {
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto px-4 md:px-10 pb-10 flex flex-col">
+            <div className="px-4 md:px-10 pb-10 flex flex-col">
+
+              <div className="w-full mb-8 bg-white border border-gray-100 rounded-3xl p-5 md:p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 mb-4">
+                  <h3 className="text-sm font-semibold text-stone-700">Historical Progress</h3>
+                  <p className="text-xs text-gray-400">Last 120 days</p>
+                </div>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    {selectedTracker.type === 'quit' ? (
+                      <LineChart data={historicalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="label" minTickGap={35} tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                        <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} allowDecimals={false} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="value" stroke="#111827" strokeWidth={2.5} dot={false} name="Streak Days" />
+                      </LineChart>
+                    ) : (
+                      <AreaChart data={historicalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="progressArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#111827" stopOpacity={0.32} />
+                            <stop offset="95%" stopColor="#111827" stopOpacity={0.03} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="label" minTickGap={35} tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                        <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                        <Tooltip />
+                        <Area type="monotone" dataKey="value" stroke="#111827" fill="url(#progressArea)" strokeWidth={2.2} name="Daily Amount" />
+                        <Line type="monotone" dataKey="cumulative" stroke="#6b7280" strokeWidth={1.4} dot={false} name="Cumulative" />
+                      </AreaChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {selectedTracker.type === 'build' && buildHeatmap && (
+                <div className="w-full mb-8 bg-white border border-gray-100 rounded-3xl p-5 md:p-6 shadow-sm overflow-x-auto">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 mb-4">
+                    <h3 className="text-sm font-semibold text-stone-700">Consistency Heatmap</h3>
+                    <p className="text-xs text-gray-400">Last 24 weeks</p>
+                  </div>
+
+                  <div className="flex gap-[3px] min-w-max">
+                    {buildHeatmap.columns.map((week, weekIndex) => (
+                      <div key={`week-${weekIndex}`} className="flex flex-col gap-[3px]">
+                        {week.map((cell) => {
+                          const intensity = buildHeatmap.maxAmount > 0 ? cell.amount / buildHeatmap.maxAmount : 0;
+                          const shade =
+                            intensity === 0
+                              ? 'bg-stone-100'
+                              : intensity < 0.25
+                                ? 'bg-emerald-100'
+                                : intensity < 0.5
+                                  ? 'bg-emerald-200'
+                                  : intensity < 0.75
+                                    ? 'bg-emerald-300'
+                                    : 'bg-emerald-500';
+
+                          return (
+                            <div
+                              key={cell.date}
+                              title={`${cell.date}: ${cell.amount.toFixed(1)} ${selectedTracker.unit}`}
+                              className={`w-3.5 h-3.5 rounded-[3px] border border-white/60 ${cell.isFiller ? 'opacity-0' : shade}`}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2 text-[11px] text-gray-400">
+                    <span>Less</span>
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-stone-100 border border-white/60" />
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-100 border border-white/60" />
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-200 border border-white/60" />
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-300 border border-white/60" />
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-500 border border-white/60" />
+                    <span>More</span>
+                  </div>
+                </div>
+              )}
 
               {(selectedTracker.type === 'build' || selectedTracker.type === 'boolean') && habitLogs.length > 0 && (
                 <div className="w-full mb-8">
@@ -793,7 +1139,7 @@ function App() {
                 )}
               </div>
             </div>
-          </>
+          </div>
         ) : selectedCategory ? (
           <div className="flex-1 overflow-y-auto px-4 md:px-10 pt-6 md:pt-10 pb-10">
             <div className="flex items-center gap-3 mb-7">

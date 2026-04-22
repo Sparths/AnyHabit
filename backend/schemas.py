@@ -55,3 +55,10 @@ class HabitLog(HabitLogBase):
 
     class Config:
         from_attributes = True
+
+class DailyStat(BaseModel):
+    date: str
+    total_amount: float
+
+    class Config:
+        from_attributes = True
