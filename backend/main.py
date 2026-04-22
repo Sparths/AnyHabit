@@ -155,6 +155,7 @@ def delete_tracker(tracker_id: int, db: Session = Depends(get_db)):
     
 
     db.query(models.JournalEntry).filter(models.JournalEntry.tracker_id == tracker_id).delete()
+    db.query(models.HabitLog).filter(models.HabitLog.tracker_id == tracker_id).delete()
     db.delete(db_tracker)
     db.commit()
     
