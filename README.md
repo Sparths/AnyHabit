@@ -23,7 +23,12 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.5.0] - Latest Release
+#### [v0.6.0] - Latest Release
+- **Added:** Add Relapse Feature that resets your Tracker without having to delete the whole tracker and loosing all Journal Entries
+- **Fix:** Changed that Impact Units go up based on actual units logged.
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.5.0...v0.6.0)
+  
+#### [v0.5.0] - Custom Impact Units
 - **Added:** Support custom impact units!
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.4.0...v0.5.0)
 
