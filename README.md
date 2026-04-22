@@ -73,7 +73,7 @@ AnyHabit is designed to be "up and running" in seconds. You do **not** need Node
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/Sparths/AnyHabit.git](https://github.com/Sparths/AnyHabit.git)
+git clone https://github.com/Sparths/AnyHabit.git
 cd AnyHabit
 
 # 2. Build and start everything
