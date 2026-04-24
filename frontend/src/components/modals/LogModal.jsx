@@ -1,9 +1,19 @@
 function LogModal({ isOpen, setIsLogModalOpen, selectedTracker, logFormData, setLogFormData, handleLogSubmit }) {
   if (!isOpen) return null;
 
+  const toLocalInputValue = (value) => {
+    if (!value) return '';
+
+    const safeDate = new Date(value);
+    if (Number.isNaN(safeDate.getTime())) return '';
+
+    const pad = (n) => String(n).padStart(2, '0');
+
+    return `${safeDate.getFullYear()}-${pad(safeDate.getMonth() + 1)}-${pad(safeDate.getDate())}T${pad(safeDate.getHours())}:${pad(safeDate.getMinutes())}`;
+  };
+
   const timestampInputValue = (() => {
-    const parsed = new Date(logFormData.timestamp || new Date().toISOString());
-    return Number.isNaN(parsed.getTime()) ? new Date().toISOString().slice(0, 16) : parsed.toISOString().slice(0, 16);
+    return toLocalInputValue(logFormData.timestamp);
   })();
 
   return (
@@ -31,7 +41,7 @@ function LogModal({ isOpen, setIsLogModalOpen, selectedTracker, logFormData, set
             />
           </div>
           <div className="mb-6">
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Date (UTC)</label>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Date (local time)</label>
             <input
               type="datetime-local"
               required
@@ -39,7 +49,9 @@ function LogModal({ isOpen, setIsLogModalOpen, selectedTracker, logFormData, set
               onChange={(e) =>
                 setLogFormData((prev) => ({
                   ...prev,
-                  timestamp: new Date(`${e.target.value}:00.000Z`).toISOString()
+                  timestamp: Number.isNaN(new Date(e.target.value).getTime())
+                    ? new Date().toISOString()
+                    : new Date(e.target.value).toISOString()
                 }))
               }
               className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-stone-400 bg-stone-50 text-base font-medium text-stone-800"

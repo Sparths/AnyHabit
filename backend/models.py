@@ -1,6 +1,10 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
-from datetime import datetime
+from datetime import datetime, timezone
 from .database import Base
+
+
+def utcnow_naive():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class Tracker(Base):
     __tablename__ = "trackers"
@@ -9,7 +13,8 @@ class Tracker(Base):
     name = Column(String, index=True)
     category = Column(String, default="General", index=True)
     type = Column(String)
-    start_date = Column(DateTime, default=datetime.utcnow)
+    start_date = Column(DateTime, default=utcnow_naive)
+    current_streak_start_date = Column(DateTime, default=utcnow_naive)
     impact_amount = Column(Float, default=0.0)
     impact_unit = Column(String, default="$")
     impact_per = Column(String)
@@ -24,9 +29,10 @@ class JournalEntry(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"))
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=utcnow_naive)
     mood = Column(Integer, nullable=True)
     content = Column(String)
+    is_relapse = Column(Boolean, default=False)
 
 
 
@@ -35,5 +41,5 @@ class HabitLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"))
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=utcnow_naive)
     amount = Column(Float, default=1.0)

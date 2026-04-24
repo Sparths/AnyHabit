@@ -16,8 +16,7 @@ function TrackerView({
   setSelectedCategory,
   setIsLogModalOpen,
   setLogFormData,
-  API_URL,
-  fetchHabitLogs,
+  onQuickBooleanLog,
   handleResetTracker,
   toggleTrackerStatus,
   openTrackerModal,
@@ -37,8 +36,7 @@ function TrackerView({
         setSelectedCategory={setSelectedCategory}
         setIsLogModalOpen={setIsLogModalOpen}
         setLogFormData={setLogFormData}
-        API_URL={API_URL}
-        fetchHabitLogs={fetchHabitLogs}
+        onQuickBooleanLog={onQuickBooleanLog}
         handleResetTracker={handleResetTracker}
         toggleTrackerStatus={toggleTrackerStatus}
         openTrackerModal={openTrackerModal}

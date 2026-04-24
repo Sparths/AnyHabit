@@ -1,27 +1,9 @@
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
 export const isSamePeriod = (logDate, period) => {
-  const d1 = new Date(logDate);
-  const now = new Date();
-
-  if (period === 'day') {
-    return d1.toDateString() === now.toDateString();
-  }
-  if (period === 'month') {
-    return d1.getMonth() === now.getMonth() && d1.getFullYear() === now.getFullYear();
-  }
-  if (period === 'year') {
-    return d1.getFullYear() === now.getFullYear();
-  }
-  if (period === 'week') {
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
-    return d1 >= startOfWeek && d1 < endOfWeek;
-  }
-  return false;
+  const logStart = periodStart(logDate, period);
+  const nowStart = periodStart(new Date(), period);
+  return logStart.getTime() === nowStart.getTime();
 };
 
 export const toUtcDateKey = (date) => {
