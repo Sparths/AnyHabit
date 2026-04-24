@@ -1,0 +1,76 @@
+import TrackerHeader from './tracker/TrackerHeader';
+import TrackerStats from './tracker/TrackerStats';
+import TrackerCharts from './tracker/TrackerCharts';
+import JournalSection from './tracker/JournalSection';
+
+function TrackerView({
+  selectedTracker,
+  dailyProgress,
+  currentMath,
+  streakStats,
+  historicalChartData,
+  buildHeatmap,
+  habitLogs,
+  deleteLog,
+  setIsSidebarOpen,
+  setSelectedCategory,
+  setIsLogModalOpen,
+  setLogFormData,
+  API_URL,
+  fetchHabitLogs,
+  handleResetTracker,
+  toggleTrackerStatus,
+  openTrackerModal,
+  deleteTracker,
+  journalFormData,
+  setJournalFormData,
+  handleJournalSubmit,
+  journals,
+  deleteJournal
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <TrackerHeader
+        selectedTracker={selectedTracker}
+        dailyProgress={dailyProgress}
+        setIsSidebarOpen={setIsSidebarOpen}
+        setSelectedCategory={setSelectedCategory}
+        setIsLogModalOpen={setIsLogModalOpen}
+        setLogFormData={setLogFormData}
+        API_URL={API_URL}
+        fetchHabitLogs={fetchHabitLogs}
+        handleResetTracker={handleResetTracker}
+        toggleTrackerStatus={toggleTrackerStatus}
+        openTrackerModal={openTrackerModal}
+        deleteTracker={deleteTracker}
+      />
+
+      <TrackerStats
+        selectedTracker={selectedTracker}
+        dailyProgress={dailyProgress}
+        currentMath={currentMath}
+        streakStats={streakStats}
+      />
+
+      <div className="px-4 md:px-10 pb-10 flex flex-col">
+        <TrackerCharts
+          selectedTracker={selectedTracker}
+          historicalChartData={historicalChartData}
+          buildHeatmap={buildHeatmap}
+          habitLogs={habitLogs}
+          deleteLog={deleteLog}
+        />
+
+        <JournalSection
+          journalFormData={journalFormData}
+          setJournalFormData={setJournalFormData}
+          handleJournalSubmit={handleJournalSubmit}
+          journals={journals}
+          deleteJournal={deleteJournal}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default TrackerView;
