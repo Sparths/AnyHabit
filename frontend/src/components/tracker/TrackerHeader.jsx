@@ -18,8 +18,7 @@ function TrackerHeader({
   setSelectedCategory,
   setIsLogModalOpen,
   setLogFormData,
-  API_URL,
-  fetchHabitLogs,
+  onQuickBooleanLog,
   handleResetTracker,
   toggleTrackerStatus,
   openTrackerModal,
@@ -99,15 +98,7 @@ function TrackerHeader({
           )}
           {selectedTracker.type === 'boolean' && dailyProgress.total < 1 && (
             <button
-              onClick={async () => {
-                const timestamp = new Date().toISOString();
-                await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/?timestamp=${encodeURIComponent(timestamp)}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ amount: 1.0 })
-                });
-                fetchHabitLogs(selectedTracker.id);
-              }}
+              onClick={onQuickBooleanLog}
               className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
             >
               <CheckCircle2 size={16} /> Mark as Done

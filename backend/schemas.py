@@ -21,6 +21,7 @@ class TrackerCreate(TrackerBase):
 class Tracker(TrackerBase):
     id: int
     start_date: datetime
+    current_streak_start_date: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -37,6 +38,7 @@ class JournalEntry(JournalEntryBase):
     id: int
     tracker_id: int
     timestamp: datetime
+    is_relapse: bool = False
 
     class Config:
         from_attributes = True
