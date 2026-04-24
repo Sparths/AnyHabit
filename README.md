@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.6.3] - Latest Release
+#### [v0.7.0] - Latest Release
+- **Added:** Refactor app structure, Fix Bugs
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.3...v0.7.0)
+
+#### [v0.6.3] - Date Selection
 - **Added:** Date Selection for "Build" Trackers Logs
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.2...v0.6.3)
 
