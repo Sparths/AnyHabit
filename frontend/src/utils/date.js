@@ -33,7 +33,14 @@ export const toUtcDateKey = (date) => {
 
 export const parseApiDate = (value) => {
   if (!value) return new Date();
-  const normalized = value.endsWith('Z') ? value : `${value}Z`;
+  if (value instanceof Date) return new Date(value);
+
+  const raw = String(value).trim();
+  if (!raw) return new Date();
+
+  
+  const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw);
+  const normalized = hasTimezone ? raw : `${raw}Z`;
   return new Date(normalized);
 };
 

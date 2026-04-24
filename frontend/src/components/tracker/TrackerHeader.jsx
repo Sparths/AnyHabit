@@ -89,7 +89,7 @@ function TrackerHeader({
           {selectedTracker.type === 'build' && (
             <button
               onClick={() => {
-                setLogFormData({ amount: 1 });
+                setLogFormData({ amount: 1, timestamp: new Date().toISOString() });
                 setIsLogModalOpen(true);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
@@ -100,7 +100,8 @@ function TrackerHeader({
           {selectedTracker.type === 'boolean' && dailyProgress.total < 1 && (
             <button
               onClick={async () => {
-                await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/`, {
+                const timestamp = new Date().toISOString();
+                await fetch(`${API_URL}/trackers/${selectedTracker.id}/logs/?timestamp=${encodeURIComponent(timestamp)}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ amount: 1.0 })

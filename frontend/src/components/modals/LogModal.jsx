@@ -1,6 +1,11 @@
 function LogModal({ isOpen, setIsLogModalOpen, selectedTracker, logFormData, setLogFormData, handleLogSubmit }) {
   if (!isOpen) return null;
 
+  const timestampInputValue = (() => {
+    const parsed = new Date(logFormData.timestamp || new Date().toISOString());
+    return Number.isNaN(parsed.getTime()) ? new Date().toISOString().slice(0, 16) : parsed.toISOString().slice(0, 16);
+  })();
+
   return (
     <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="app-modal-card bg-white p-5 md:p-8 rounded-3xl shadow-xl w-[95%] max-w-sm border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-hide">
@@ -16,7 +21,27 @@ function LogModal({ isOpen, setIsLogModalOpen, selectedTracker, logFormData, set
               step="0.1"
               required
               value={logFormData.amount}
-              onChange={(e) => setLogFormData({ amount: e.target.value })}
+              onChange={(e) =>
+                setLogFormData((prev) => ({
+                  ...prev,
+                  amount: e.target.value
+                }))
+              }
+              className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-stone-400 bg-stone-50 text-base font-medium text-stone-800"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Date (UTC)</label>
+            <input
+              type="datetime-local"
+              required
+              value={timestampInputValue}
+              onChange={(e) =>
+                setLogFormData((prev) => ({
+                  ...prev,
+                  timestamp: new Date(`${e.target.value}:00.000Z`).toISOString()
+                }))
+              }
               className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:border-stone-400 bg-stone-50 text-base font-medium text-stone-800"
             />
           </div>

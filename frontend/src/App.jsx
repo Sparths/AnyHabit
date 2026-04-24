@@ -60,7 +60,7 @@ function App() {
 
   const [habitLogs, setHabitLogs] = useState([]);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [logFormData, setLogFormData] = useState({ amount: 1.0 });
+  const [logFormData, setLogFormData] = useState({ amount: 1.0, timestamp: new Date().toISOString() });
 
   const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, impactValue: 0 });
   const [dailyProgress, setDailyProgress] = useState({ total: 0, target: 0, percentage: 0 });
@@ -204,7 +204,7 @@ function App() {
 
       const periodToCheck = selectedTracker.type === 'boolean' ? selectedTracker.units_per : 'day';
       const periodLogs = habitLogs.filter((log) => {
-        const logDate = new Date(log.timestamp.endsWith('Z') ? log.timestamp : `${log.timestamp}Z`);
+        const logDate = parseApiDate(log.timestamp);
         return isSamePeriod(logDate, periodToCheck);
       });
 
@@ -367,9 +367,17 @@ function App() {
     });
 
     const trackerStart = periodStart(parseApiDate(selectedTracker.start_date), streakPeriod);
+    const firstLoggedPeriod = habitLogs.reduce((earliest, log) => {
+      const candidate = periodStart(parseApiDate(log.timestamp), streakPeriod);
+      if (!earliest || candidate < earliest) return candidate;
+      return earliest;
+    }, null);
+
+    const scanStart =
+      firstLoggedPeriod && firstLoggedPeriod < trackerStart ? firstLoggedPeriod : trackerStart;
     const todayPeriod = periodStart(new Date(), streakPeriod);
 
-    let cursor = new Date(trackerStart);
+    let cursor = new Date(scanStart);
     let longest = 0;
     let running = 0;
     const completedPeriods = [];
@@ -578,15 +586,20 @@ function App() {
     e.preventDefault();
     if (!selectedTrackerId) return;
 
+    const timestamp = logFormData.timestamp || new Date().toISOString();
+
     try {
-      const response = await fetch(`${API_URL}/trackers/${selectedTrackerId}/logs/`, {
+      const response = await fetch(
+        `${API_URL}/trackers/${selectedTrackerId}/logs/?timestamp=${encodeURIComponent(timestamp)}`,
+        {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(logFormData.amount) })
-      });
+          body: JSON.stringify({ amount: parseFloat(logFormData.amount) })
+        }
+      );
       if (response.ok) {
         setIsLogModalOpen(false);
-        setLogFormData({ amount: 1.0 });
+        setLogFormData({ amount: 1.0, timestamp: new Date().toISOString() });
         fetchHabitLogs(selectedTrackerId);
       }
     } catch (error) {
