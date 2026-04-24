@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.6.2] - Latest Release
+#### [v0.6.3] - Latest Release
+- **Added:** Date Selection for "Build" Trackers Logs
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.2...v0.6.3)
+
+#### [v0.6.2] - Historical Progress
 - **Added:** Historical Progress/Heatmap
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.1...v0.6.2)
 
@@ -39,31 +43,6 @@
 #### [v0.5.0] - Custom Impact Units
 - **Added:** Support custom impact units!
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.4.0...v0.5.0)
-
-#### [v0.4.0] - Logic Update
-- **Added:** New Tracker Type "Boolean"!
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.3.1...v0.4.0)
-
-#### [v0.3.1] - UI Enhancement
-- **Added:** Fix Darkmode Colors
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.3.0...v0.3.1)
-
-#### [v0.3.0] - UX Enhancement
-- **Added:** Category support for better tracker organization.
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.2.0...v0.3.0)
-
-#### [v0.2.0] - UI Enhancement
-- **Added:** Full Dark Mode / Light Mode support.
-- **Added:** Dedicated Settings window for better customization.
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.1.1...v0.2.0)
-
-#### [v0.1.1] - Small Fixes
-- **Fixed:** Visual bug where an unnecessary 's' was appended to units.
-- **Added:** Timestamps showing exactly when a tracker was created.
-
-#### [v0.1.0] - Initial Release!
-- Launch of AnyHabit: Dual tracking modes, financial impact calculation, daily journal, and one-command Docker deployment.
-</details>
 
 ---
 
