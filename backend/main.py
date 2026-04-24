@@ -104,7 +104,11 @@ def reset_tracker(tracker_id: int, db: Session = Depends(get_db)):
 #Create
 @app.post("/trackers/", response_model=schemas.Tracker)
 def create_tracker(tracker: schemas.TrackerCreate, db: Session = Depends(get_db)):
-    db_tracker = models.Tracker(**tracker.model_dump())
+    payload = tracker.model_dump(exclude_none=True)
+    if "start_date" not in payload:
+        payload["start_date"] = datetime.now(timezone.utc)
+
+    db_tracker = models.Tracker(**payload)
     db.add(db_tracker)
     db.commit()
     db.refresh(db_tracker)
