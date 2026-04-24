@@ -144,10 +144,11 @@ function App() {
 
     const calculateSavings = () => {
       const now = new Date();
-      const startDateString = selectedTracker.start_date.endsWith('Z')
-        ? selectedTracker.start_date
-        : `${selectedTracker.start_date}Z`;
-      const startDate = new Date(startDateString);
+      const startDate = parseApiDate(selectedTracker.start_date);
+      if (Number.isNaN(startDate.getTime())) {
+        setCurrentMath({ mainUnit: '0.0', targetUnit: '0.0', impactValue: '0.00' });
+        return;
+      }
       const diffMs = now - startDate;
 
       const msPerDay = 1000 * 60 * 60 * 24;
@@ -329,9 +330,9 @@ function App() {
     }
 
     if (selectedTracker.type === 'quit') {
-      const now = new Date();
-      const trackerStart = parseApiDate(selectedTracker.start_date);
-      const current = Math.max(0, Math.floor((now - trackerStart) / DAY_MS));
+      const today = periodStart(new Date(), 'day');
+      const trackerStartDay = periodStart(parseApiDate(selectedTracker.start_date), 'day');
+      const current = Math.max(0, Math.floor((today - trackerStartDay) / DAY_MS) + 1);
 
       const relapseMoments = journals
         .filter((entry) => (entry.content || '').toLowerCase().includes('relapse'))
