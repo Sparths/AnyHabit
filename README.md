@@ -43,6 +43,7 @@
 #### [v0.5.0] - Custom Impact Units
 - **Added:** Support custom impact units!
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.4.0...v0.5.0)
+</details>
 
 ---
 
