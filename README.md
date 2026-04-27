@@ -64,7 +64,7 @@
 * **Dual Tracking Modes:** Monitor positive routines or reduce harmful ones.
 * **Categories:** Organize your dashboard with custom categories.
 * **Dark Mode:** Seamlessly switch between Light and Dark themes.
-* **Financial Impact:** Automatically calculate money saved by avoiding negative habits.
+* **Impact Units:** Automatically calculate money/Calories and more by avoiding negative habits.
 * **Daily Journal:** Log your mood and thoughts alongside your habits.
 * **Self-Hosted & Private:** Complete control over your data with SQLite and Docker.
 
