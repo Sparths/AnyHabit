@@ -21,6 +21,7 @@ class Tracker(Base):
     unit = Column(String) 
     units_per_amount = Column(Float, default=0.0)
     units_per = Column(String)
+    units_per_interval = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)
 
 

@@ -95,6 +95,7 @@ def edit_tracker(tracker_id: int, entry: schemas.TrackerBase, db: Session = Depe
     db_tracker.unit = entry.unit
     db_tracker.units_per_amount = entry.units_per_amount
     db_tracker.units_per = entry.units_per
+    db_tracker.units_per_interval = entry.units_per_interval
     db_tracker.is_active = entry.is_active
 
     db.commit()

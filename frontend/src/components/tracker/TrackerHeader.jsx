@@ -11,6 +11,27 @@ import {
   Menu
 } from 'lucide-react';
 
+const PERIOD_LABELS = {
+  day: { singular: 'day', plural: 'days' },
+  week: { singular: 'week', plural: 'weeks' },
+  month: { singular: 'month', plural: 'months' },
+  year: { singular: 'year', plural: 'years' }
+};
+
+const formatScheduleLabel = (tracker) => {
+  const interval = Math.max(1, Number(tracker.units_per_interval || 1));
+  const period = PERIOD_LABELS[tracker.units_per] || PERIOD_LABELS.day;
+  const periodLabel = interval === 1 ? period.singular : period.plural;
+
+  if (tracker.type === 'boolean') {
+    return interval === 1
+      ? `${period.singular.charAt(0).toUpperCase() + period.singular.slice(1)} Habit`
+      : `Habit every ${interval} ${periodLabel}`;
+  }
+
+  return `${tracker.units_per_amount} ${tracker.unit} / ${interval} ${periodLabel}`;
+};
+
 function TrackerHeader({
   selectedTracker,
   dailyProgress,
@@ -61,10 +82,10 @@ function TrackerHeader({
             <p className="flex items-center gap-2 text-sm text-gray-500">
               <Target size={14} />
               {selectedTracker.type === 'boolean'
-                ? `${selectedTracker.units_per.charAt(0).toUpperCase() + selectedTracker.units_per.slice(1)} Habit`
+                ? formatScheduleLabel(selectedTracker)
                 : selectedTracker.type === 'quit'
-                  ? `Avoid ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`
-                  : `Goal: ${selectedTracker.units_per_amount} ${selectedTracker.unit} / ${selectedTracker.units_per}`}
+                  ? `Avoid ${formatScheduleLabel(selectedTracker)}`
+                  : `Goal: ${formatScheduleLabel(selectedTracker)}`}
             </p>
             <p className="flex items-center gap-2 text-sm text-gray-500">
               <Calendar size={14} />
@@ -96,7 +117,7 @@ function TrackerHeader({
               <PlusCircle size={16} /> Log Activity
             </button>
           )}
-          {selectedTracker.type === 'boolean' && dailyProgress.total < 1 && (
+          {selectedTracker.type === 'boolean' && dailyProgress.total < dailyProgress.target && (
             <button
               onClick={onQuickBooleanLog}
               className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"

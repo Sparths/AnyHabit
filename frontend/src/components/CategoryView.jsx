@@ -1,5 +1,26 @@
 import { Menu } from 'lucide-react';
 
+const PERIOD_LABELS = {
+  day: { singular: 'day', plural: 'days' },
+  week: { singular: 'week', plural: 'weeks' },
+  month: { singular: 'month', plural: 'months' },
+  year: { singular: 'year', plural: 'years' }
+};
+
+const formatScheduleLabel = (tracker) => {
+  const interval = Math.max(1, Number(tracker.units_per_interval || 1));
+  const period = PERIOD_LABELS[tracker.units_per] || PERIOD_LABELS.day;
+  const periodLabel = interval === 1 ? period.singular : period.plural;
+
+  if (tracker.type === 'boolean') {
+    return interval === 1
+      ? `${period.singular.charAt(0).toUpperCase() + period.singular.slice(1)} Habit`
+      : `Habit every ${interval} ${periodLabel}`;
+  }
+
+  return `${tracker.units_per_amount} ${tracker.unit} / ${interval} ${periodLabel}`;
+};
+
 function CategoryView({
   selectedCategory,
   selectedCategoryTrackers,
@@ -52,8 +73,8 @@ function CategoryView({
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-500">
                       <span>
                         {tracker.type === 'boolean'
-                          ? `${tracker.units_per.charAt(0).toUpperCase() + tracker.units_per.slice(1)} Habit`
-                          : `${tracker.type === 'quit' ? 'Avoid' : 'Goal'}: ${tracker.units_per_amount} ${tracker.unit} / ${tracker.units_per}`}
+                          ? formatScheduleLabel(tracker)
+                          : `${tracker.type === 'quit' ? 'Avoid' : 'Goal'}: ${formatScheduleLabel(tracker)}`}
                       </span>
                       {tracker.type !== 'boolean' && (
                         <span>

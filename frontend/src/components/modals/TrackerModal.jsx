@@ -169,16 +169,34 @@ function TrackerModal({
           {trackerFormData.type === 'boolean' ? (
             <div className="p-4 rounded-2xl border border-gray-100 bg-white">
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Frequency</label>
-              <select
-                value={trackerFormData.units_per}
-                onChange={(e) => setTrackerFormData({ ...trackerFormData, units_per: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"
-              >
-                <option value="day">Daily</option>
-                <option value="week">Weekly</option>
-                <option value="month">Monthly</option>
-                <option value="year">Yearly</option>
-              </select>
+              <div className="space-y-3">
+                <select
+                  value={trackerFormData.units_per}
+                  onChange={(e) => setTrackerFormData({ ...trackerFormData, units_per: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"
+                >
+                  <option value="day">Daily</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly</option>
+                  <option value="year">Yearly</option>
+                </select>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Every N Periods
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={trackerFormData.units_per_interval}
+                    onChange={(e) =>
+                      setTrackerFormData({ ...trackerFormData, units_per_interval: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"
+                    placeholder="e.g. 3"
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="p-4 rounded-2xl border border-gray-100 bg-white">
@@ -204,6 +222,22 @@ function TrackerModal({
                   <option value="month">Month</option>
                   <option value="year">Year</option>
                 </select>
+              </div>
+              <div className="mt-3">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Every N Periods
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={trackerFormData.units_per_interval}
+                  onChange={(e) =>
+                    setTrackerFormData({ ...trackerFormData, units_per_interval: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm"
+                  placeholder="e.g. 3"
+                />
               </div>
             </div>
           )}

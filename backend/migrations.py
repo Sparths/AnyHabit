@@ -64,6 +64,25 @@ def ensure_tracker_streak_column():
         )
 
 
+def ensure_tracker_units_per_interval_column():
+    with engine.begin() as connection:
+        columns = connection.execute(text("PRAGMA table_info(trackers)"))
+        column_names = {row[1] for row in columns}
+
+        if "units_per_interval" not in column_names:
+            connection.execute(
+                text("ALTER TABLE trackers ADD COLUMN units_per_interval INTEGER DEFAULT 1")
+            )
+
+        connection.execute(
+            text(
+                "UPDATE trackers "
+                "SET units_per_interval = 1 "
+                "WHERE units_per_interval IS NULL OR units_per_interval < 1"
+            )
+        )
+
+
 def ensure_journal_relapse_column():
     with engine.begin() as connection:
         columns = connection.execute(text("PRAGMA table_info(journal_entries)"))
@@ -86,4 +105,5 @@ def run_startup_migrations():
     ensure_tracker_category_column()
     ensure_tracker_impact_columns()
     ensure_tracker_streak_column()
+    ensure_tracker_units_per_interval_column()
     ensure_journal_relapse_column()

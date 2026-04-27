@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 
@@ -13,6 +13,7 @@ class TrackerBase(BaseModel):
     unit: str
     units_per_amount: float = 0.0
     units_per: str = "day"
+    units_per_interval: int = Field(default=1, ge=1)
     is_active: bool = True
 
 class TrackerCreate(TrackerBase):

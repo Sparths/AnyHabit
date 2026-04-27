@@ -27,6 +27,8 @@ export async function saveTrackerApi(trackerFormData) {
   const isBoolean = trackerFormData.type === 'boolean';
   const url = isEdit ? `/trackers/${trackerFormData.id}/` : '/trackers/';
   const method = isEdit ? 'PATCH' : 'POST';
+  const parsedInterval = parseInt(trackerFormData.units_per_interval, 10);
+  const unitsPerInterval = Number.isNaN(parsedInterval) ? 1 : Math.max(1, parsedInterval);
 
   const payload = {
     name: trackerFormData.name,
@@ -38,6 +40,7 @@ export async function saveTrackerApi(trackerFormData) {
     impact_per: trackerFormData.impact_per,
     units_per_amount: isBoolean ? 1.0 : parseFloat(trackerFormData.units_per_amount) || 0.0,
     units_per: trackerFormData.units_per,
+    units_per_interval: unitsPerInterval,
     is_active: trackerFormData.is_active
   };
 

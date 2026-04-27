@@ -15,6 +15,7 @@ export const DEFAULT_TRACKER_FORM = {
   impact_per: 'day',
   units_per_amount: 0.0,
   units_per: 'day',
+  units_per_interval: 1,
   is_active: true
 };
 
