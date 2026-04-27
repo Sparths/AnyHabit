@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.8.0] - Latest Release
+#### [v0.9.0] - Latest Release
+- **Added:** Homescreem Widgets
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.8.0...v0.9.0)
+
+#### [v0.8.0] - Habit Scheduling
 - **Added:** Flexible Habit Scheduling
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.7.0...v0.8.0)
 
