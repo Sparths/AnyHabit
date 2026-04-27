@@ -101,9 +101,30 @@ def ensure_journal_relapse_column():
         )
 
 
+def ensure_home_dashboard_state():
+    with engine.begin() as connection:
+        table_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='dashboard_states'")
+        ).first()
+
+        if not table_exists:
+            return
+
+        connection.execute(
+            text(
+                "INSERT INTO dashboard_states (name, widgets_json, layouts_json, updated_at) "
+                "SELECT 'home', '[]', '{}', CURRENT_TIMESTAMP "
+                "WHERE NOT EXISTS ("
+                "SELECT 1 FROM dashboard_states WHERE name = 'home'"
+                ")"
+            )
+        )
+
+
 def run_startup_migrations():
     ensure_tracker_category_column()
     ensure_tracker_impact_columns()
     ensure_tracker_streak_column()
     ensure_tracker_units_per_interval_column()
     ensure_journal_relapse_column()
+    ensure_home_dashboard_state()
