@@ -38,7 +38,8 @@ body {
 
 .theme-dark .border-gray-50,
 .theme-dark .border-gray-100,
-.theme-dark .border-gray-200 {
+.theme-dark .border-gray-200,
+.theme-dark .border-gray-300 {
   border-color: #253042 !important;
 }
 
@@ -64,6 +65,7 @@ body {
 .theme-dark .text-gray-500,
 .theme-dark .text-gray-400,
 .theme-dark .text-gray-300,
+.theme-dark .text-gray-800,
 .theme-dark .text-white {
   color: #e5e7eb !important;
 }
@@ -101,4 +103,57 @@ body {
 .theme-dark .category-count-badge {
   background-color: #1c2433 !important;
   color: #94a3b8 !important;
+}
+
+.home-grid .react-grid-item {
+  transition: transform 180ms ease;
+}
+
+.home-grid .react-grid-placeholder {
+  border-radius: 24px;
+  background: rgba(24, 24, 27, 0.14);
+  border: 1px dashed rgba(24, 24, 27, 0.2);
+}
+
+.home-grid .react-resizable-handle {
+  opacity: 0.55;
+}
+
+.home-grid .react-resizable-handle:hover {
+  opacity: 1;
+}
+
+.theme-dark .home-widget-card {
+  background-color: #111827 !important;
+  border-color: #253042 !important;
+}
+
+.theme-dark .home-grid .react-grid-placeholder {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.theme-dark .bg-white\/80 {
+  background-color: rgba(17, 24, 39, 0.88) !important;
+}
+
+.theme-dark .bg-white\/90 {
+  background-color: rgba(17, 24, 39, 0.94) !important;
+}
+
+.theme-dark .bg-stone-50\/70 {
+  background-color: #1b2433 !important;
+}
+
+.theme-dark .home-page {
+  background-color: #0f172a !important;
+}
+
+.theme-dark .home-widget-card .widget-drag-handle {
+  border-color: #253042 !important;
+}
+
+.theme-dark .home-grid .react-resizable-handle::after {
+  border-right-color: #64748b !important;
+  border-bottom-color: #64748b !important;
 }

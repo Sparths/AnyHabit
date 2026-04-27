@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 
 class TrackerBase(BaseModel):
@@ -65,3 +65,12 @@ class DailyStat(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DashboardStatePayload(BaseModel):
+    widgets: list[dict[str, Any]] = Field(default_factory=list)
+    layouts: dict[str, Any] = Field(default_factory=dict)
+
+
+class DashboardStateResponse(DashboardStatePayload):
+    updated_at: Optional[datetime] = None

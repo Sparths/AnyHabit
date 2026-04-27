@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
 from datetime import datetime, timezone
 from .database import Base
 
@@ -44,3 +44,13 @@ class HabitLog(Base):
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"))
     timestamp = Column(DateTime, default=utcnow_naive)
     amount = Column(Float, default=1.0)
+
+
+class DashboardState(Base):
+    __tablename__ = "dashboard_states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, default="home")
+    widgets_json = Column(Text, default="[]")
+    layouts_json = Column(Text, default="{}")
+    updated_at = Column(DateTime, default=utcnow_naive, onupdate=utcnow_naive)

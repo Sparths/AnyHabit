@@ -3,7 +3,7 @@ import './App.css';
 import Sidebar from './components/Sidebar';
 import TrackerView from './components/TrackerView';
 import CategoryView from './components/CategoryView';
-import EmptyTrackerState from './components/EmptyTrackerState';
+import HomePage from './components/home/HomePage';
 import LogModal from './components/modals/LogModal';
 import TrackerModal from './components/modals/TrackerModal';
 import SettingsModal from './components/modals/SettingsModal';
@@ -14,6 +14,7 @@ import { useTrackerData } from './hooks/useTrackerData';
 import { useTrackerAnalytics } from './hooks/useTrackerAnalytics';
 
 function App() {
+  const [currentView, setCurrentView] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -30,9 +31,9 @@ function App() {
   const {
     trackers,
     selectedTrackerId,
-    setSelectedTrackerId,
+    setSelectedTrackerId: setSelectedTrackerIdState,
     selectedCategory,
-    setSelectedCategory,
+    setSelectedCategory: setSelectedCategoryState,
     selectedTracker,
     journals,
     habitLogs,
@@ -163,6 +164,44 @@ function App() {
     }
   };
 
+  const openHome = () => {
+    setSelectedTrackerIdState(null);
+    setSelectedCategoryState(null);
+    setCurrentView('home');
+    setIsSidebarOpen(false);
+  };
+
+  const handleSelectCategory = (nextCategory) => {
+    const resolvedCategory = typeof nextCategory === 'function' ? nextCategory(selectedCategory) : nextCategory;
+
+    if (!resolvedCategory) {
+      setSelectedTrackerIdState(null);
+      setSelectedCategoryState(null);
+      setCurrentView('home');
+      return;
+    }
+
+    setSelectedCategoryState(resolvedCategory);
+    setSelectedTrackerIdState(null);
+    setCurrentView('category');
+  };
+
+  const handleSelectTracker = (trackerId, category) => {
+    if (!trackerId) {
+      setSelectedTrackerIdState(null);
+      setCurrentView(selectedCategory ? 'category' : 'home');
+      return;
+    }
+
+    if (category) {
+      setSelectedCategoryState(category);
+    }
+    setSelectedTrackerIdState(trackerId);
+    setCurrentView('tracker');
+  };
+
+  const shouldShowHome = currentView === 'home' || (!selectedTracker && !selectedCategory);
+
   return (
     <div
       className={`app-shell flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800 ${
@@ -184,15 +223,25 @@ function App() {
         activeCategory={activeCategory}
         collapsedCategories={collapsedCategories}
         setCollapsedCategories={setCollapsedCategories}
-        setSelectedCategory={setSelectedCategory}
-        setSelectedTrackerId={setSelectedTrackerId}
+        onHomeClick={openHome}
+        isHomeActive={shouldShowHome}
+        onSelectCategory={handleSelectCategory}
+        onSelectTracker={handleSelectTracker}
         selectedTrackerId={selectedTrackerId}
         openTrackerModal={openTrackerModal}
         setIsSettingsOpen={setIsSettingsOpen}
       />
 
       <div className="app-main flex-1 flex flex-col bg-[#fcfcfc] overflow-hidden">
-        {selectedTracker ? (
+        {shouldShowHome ? (
+          <HomePage
+            trackers={trackers}
+            setIsSidebarOpen={setIsSidebarOpen}
+            onSelectTracker={handleSelectTracker}
+            onSelectCategory={handleSelectCategory}
+            openTrackerModal={openTrackerModal}
+          />
+        ) : selectedTracker ? (
           <TrackerView
             selectedTracker={selectedTracker}
             dailyProgress={dailyProgress}
@@ -203,7 +252,7 @@ function App() {
             habitLogs={habitLogs}
             deleteLog={handleDeleteLog}
             setIsSidebarOpen={setIsSidebarOpen}
-            setSelectedCategory={setSelectedCategory}
+            setSelectedCategory={handleSelectCategory}
             setIsLogModalOpen={setIsLogModalOpen}
             setLogFormData={setLogFormData}
             onQuickBooleanLog={handleQuickBooleanLog}
@@ -222,10 +271,16 @@ function App() {
             selectedCategory={selectedCategory}
             selectedCategoryTrackers={selectedCategoryTrackers}
             setIsSidebarOpen={setIsSidebarOpen}
-            setSelectedTrackerId={setSelectedTrackerId}
+            onSelectTracker={handleSelectTracker}
           />
         ) : (
-          <EmptyTrackerState setIsSidebarOpen={setIsSidebarOpen} />
+          <HomePage
+            trackers={trackers}
+            setIsSidebarOpen={setIsSidebarOpen}
+            onSelectTracker={handleSelectTracker}
+            onSelectCategory={handleSelectCategory}
+            openTrackerModal={openTrackerModal}
+          />
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { Plus, Settings, ChevronDown, X } from 'lucide-react';
+import { Plus, Settings, ChevronDown, Home, X } from 'lucide-react';
 
 function Sidebar({
   isSidebarOpen,
@@ -8,8 +8,10 @@ function Sidebar({
   activeCategory,
   collapsedCategories,
   setCollapsedCategories,
-  setSelectedCategory,
-  setSelectedTrackerId,
+  onHomeClick,
+  isHomeActive,
+  onSelectCategory,
+  onSelectTracker,
   selectedTrackerId,
   openTrackerModal,
   setIsSettingsOpen
@@ -21,10 +23,14 @@ function Sidebar({
       }`}
     >
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onHomeClick}
+          className="flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-stone-50 transition-colors"
+        >
           <img src="/AnyHabit.png" alt="AnyHabit Logo" className="w-8 h-8 rounded-lg object-cover" />
           <h1 className="text-xl font-bold tracking-tight">AnyHabit</h1>
-        </div>
+        </button>
         <button
           className="md:hidden text-gray-400 hover:text-stone-900"
           onClick={() => setIsSidebarOpen(false)}
@@ -32,6 +38,22 @@ function Sidebar({
           <X size={20} />
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          onHomeClick();
+          setIsSidebarOpen(false);
+        }}
+        className={`mb-4 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+          isHomeActive
+            ? 'bg-stone-100 text-stone-900'
+            : 'text-gray-500 hover:bg-gray-100 hover:text-stone-800'
+        }`}
+      >
+        <Home size={16} />
+        <span>Home</span>
+      </button>
 
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Trackers</h2>
@@ -57,8 +79,7 @@ function Sidebar({
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedCategory(category);
-                    setSelectedTrackerId(null);
+                    onSelectCategory(category);
                     setCollapsedCategories((prev) => ({ ...prev, [category]: false }));
                     setIsSidebarOpen(false);
                   }}
@@ -90,8 +111,7 @@ function Sidebar({
                     <li
                       key={tracker.id}
                       onClick={() => {
-                        setSelectedTrackerId(tracker.id);
-                        setSelectedCategory(category);
+                        onSelectTracker(tracker.id, category);
                         setIsSidebarOpen(false);
                       }}
                       className={`group flex flex-col px-2.5 py-2 rounded-lg cursor-pointer transition-all ${

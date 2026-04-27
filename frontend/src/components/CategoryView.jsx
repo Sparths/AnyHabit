@@ -25,7 +25,7 @@ function CategoryView({
   selectedCategory,
   selectedCategoryTrackers,
   setIsSidebarOpen,
-  setSelectedTrackerId
+  onSelectTracker
 }) {
   return (
     <div className="flex-1 overflow-y-auto px-4 md:px-10 pt-6 md:pt-10 pb-10">
@@ -92,7 +92,7 @@ function CategoryView({
 
                   <button
                     type="button"
-                    onClick={() => setSelectedTrackerId(tracker.id)}
+                    onClick={() => onSelectTracker(tracker.id, selectedCategory)}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-stone-700 hover:bg-white hover:border-stone-300 transition-colors"
                   >
                     Open
