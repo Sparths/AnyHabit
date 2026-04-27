@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.9.0] - Latest Release
+#### [v0.10.0] - Latest Release
+- **Added:** Stand Alone API
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.9.0...v0.10.0)
+
+#### [v0.9.0] - Widgets
 - **Added:** Homepage Widgets
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.8.0...v0.9.0)
 
