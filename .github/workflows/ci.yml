@@ -3,8 +3,6 @@ name: AnyHabit CI
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   frontend-lint:
