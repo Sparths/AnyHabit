@@ -22,6 +22,53 @@ export async function fetchHabitLogsApi(trackerId) {
   return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
+function normalizeTrackerAnalytics(data) {
+  const formatValue = (value, digits) => Number(value ?? 0).toFixed(digits);
+
+  return {
+    currentMath: {
+      mainUnit: formatValue(data?.current_math?.main_unit, 1),
+      targetUnit: formatValue(data?.current_math?.target_unit, 1),
+      impactValue: formatValue(data?.current_math?.impact_value, 2)
+    },
+    dailyProgress: {
+      total: Number(data?.daily_progress?.total ?? 0),
+      target: Number(data?.daily_progress?.target ?? 0),
+      percentage: Number(data?.daily_progress?.percentage ?? 0)
+    },
+    historicalChartData: (data?.historical_chart_data ?? []).map((point) => ({
+      date: point.date,
+      label: point.label,
+      value: Number(point.value ?? 0),
+      ...(point.cumulative !== null && point.cumulative !== undefined
+        ? { cumulative: Number(point.cumulative) }
+        : {})
+    })),
+    streakStats: {
+      current: Number(data?.streak_stats?.current ?? 0),
+      longest: Number(data?.streak_stats?.longest ?? 0),
+      periodLabel: data?.streak_stats?.period_label ?? 'days'
+    },
+    buildHeatmap: data?.build_heatmap
+      ? {
+          maxAmount: Number(data.build_heatmap.max_amount ?? 0),
+          columns: (data.build_heatmap.columns ?? []).map((week) =>
+            week.map((cell) => ({
+              date: cell.date,
+              amount: Number(cell.amount ?? 0),
+              isFiller: Boolean(cell.is_filler)
+            }))
+          )
+        }
+      : null
+  };
+}
+
+export async function fetchTrackerAnalyticsApi(trackerId) {
+  const analytics = await requestJson(`/trackers/${trackerId}/analytics`);
+  return normalizeTrackerAnalytics(analytics);
+}
+
 export async function saveTrackerApi(trackerFormData) {
   const isEdit = !!trackerFormData.id;
   const isBoolean = trackerFormData.type === 'boolean';

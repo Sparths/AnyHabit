@@ -100,6 +100,41 @@ Open **http://localhost** (or your device's IP) in your browser.
 
 ---
 
+## 🧪 Testing
+
+AnyHabit includes comprehensive unit tests for both backend and frontend to ensure code quality.
+
+### Quick Start
+
+Run all tests:
+```bash
+./run-tests.sh all
+```
+
+Run backend tests only:
+```bash
+./run-tests.sh backend
+```
+
+Run frontend tests only:
+```bash
+./run-tests.sh frontend
+```
+
+Run with coverage report:
+```bash
+./run-tests.sh all --coverage
+```
+
+### Test Coverage
+
+- **Backend:** 150+ tests covering analytics, API endpoints, and data models
+- **Frontend:** 40+ tests covering components, hooks, and services
+
+For detailed information, see [TESTING.md](TESTING.md).
+
+---
+
 ## ⚙️ Configuration
 
 | Variable | Description | Default |
@@ -114,7 +149,45 @@ Open **http://localhost** (or your device's IP) in your browser.
 
 ---
 
-## 🛠️ Tech Stack
+## � Backend API Documentation
+
+AnyHabit provides a **complete REST API** that enables you to:
+- ✅ **Build custom frontends** with any framework (React, Vue, Flutter, etc.)
+- ✅ **Integrate with your own applications** 
+- ✅ **Access all data programmatically** without the UI
+
+### Quick Links
+
+| Resource | Description |
+|----------|-------------|
+| **[📚 API Documentation](backend/README.md)** | Complete API reference with 25+ endpoints and examples |
+| **[⚡ Quick Reference](backend/API_QUICK_REFERENCE.md)** | One-page API cheat sheet for quick lookup |
+| **[🔧 Frontend Integration Guide](backend/FRONTEND_INTEGRATION.md)** | Guide for building custom frontends with the API |
+| **[🗂️ Documentation Index](backend/INDEX.md)** | Main navigation hub for all backend docs |
+| **[💻 Development Guide](backend/DEVELOPMENT.md)** | Backend development and contribution guide |
+
+### Example: Use the API
+
+```bash
+# Get all trackers
+curl http://localhost:8000/api/trackers/
+
+# Get complete tracker data (with analytics, logs, journals)
+curl http://localhost:8000/api/trackers/1/bundle
+
+# View interactive API docs
+# Open in browser: http://localhost:8000/docs
+```
+
+### Interactive API Documentation
+
+FastAPI provides built-in interactive documentation:
+- **[Swagger UI](http://localhost:8000/docs)** - Try endpoints live
+- **[ReDoc](http://localhost:8000/redoc)** - Alternative documentation format
+
+---
+
+## �🛠️ Tech Stack
 
 * **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12-slim)
 * **Frontend:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)

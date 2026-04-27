@@ -13,9 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
-import { fetchHomeDashboardApi, saveHomeDashboardApi } from '../../services/dashboardApi';
-import { fetchHabitLogsApi } from '../../services/trackerApi';
-import { DAY_MS, parseApiDate } from '../../utils/date';
+import { fetchDashboardSummaryApi, fetchHomeDashboardApi, saveHomeDashboardApi } from '../../services/dashboardApi';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -33,13 +31,6 @@ const GRID_COLS = {
   sm: 6,
   xs: 4,
   xxs: 2
-};
-
-const PERIOD_MS = {
-  day: DAY_MS,
-  week: DAY_MS * 7,
-  month: DAY_MS * 30.44,
-  year: DAY_MS * 365.25
 };
 
 const WIDGET_DEFINITIONS = {
@@ -102,8 +93,6 @@ const formatValue = (value, decimals = 1) =>
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   });
-
-const getPeriodMs = (period) => PERIOD_MS[period] || DAY_MS;
 
 const createWidgetId = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -267,59 +256,6 @@ const getSelectedImpactTrackerIds = (widget, trackerMap, candidateIds) => {
   return config.selectedTrackerIds.filter((trackerId) => !!trackerMap[trackerId]);
 };
 
-const getImpactPerDay = (tracker) => {
-  const impactAmount = toSafeNumber(tracker.impact_amount);
-  if (impactAmount <= 0 || tracker.type === 'boolean') return 0;
-
-  return (impactAmount / getPeriodMs(tracker.impact_per)) * DAY_MS;
-};
-
-const getImpactContribution = (tracker, logs = []) => {
-  const trackerType = tracker.type;
-  const interval = Math.max(1, toSafeNumber(tracker.units_per_interval) || 1);
-  const impactAmount = toSafeNumber(tracker.impact_amount);
-
-  if (trackerType === 'boolean' || impactAmount <= 0) {
-    return {
-      impactValue: 0,
-      mainAmount: 0,
-      modeLabel: 'No impact configured'
-    };
-  }
-
-  if (trackerType === 'quit') {
-    const startDate = parseApiDate(tracker.start_date);
-    const diffMs = Math.max(0, Date.now() - startDate.getTime());
-
-    const avoidedUnits =
-      toSafeNumber(tracker.units_per_amount) * (diffMs / (getPeriodMs(tracker.units_per) * interval));
-
-    const impactValue = impactAmount * (diffMs / getPeriodMs(tracker.impact_per));
-
-    return {
-      impactValue: Math.max(0, impactValue),
-      mainAmount: Math.max(0, avoidedUnits),
-      modeLabel: 'Time based'
-    };
-  }
-
-  const totalLogged = logs.reduce((sum, log) => sum + toSafeNumber(log.amount), 0);
-  const impactPerMs = impactAmount / getPeriodMs(tracker.impact_per);
-  const unitsPerMs =
-    toSafeNumber(tracker.units_per_amount) > 0
-      ? toSafeNumber(tracker.units_per_amount) / (getPeriodMs(tracker.units_per) * interval)
-      : 0;
-
-  const impactPerUnit = unitsPerMs > 0 ? impactPerMs / unitsPerMs : 0;
-  const impactValue = totalLogged * impactPerUnit;
-
-  return {
-    impactValue: Math.max(0, impactValue),
-    mainAmount: Math.max(0, totalLogged),
-    modeLabel: 'From logs'
-  };
-};
-
 function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal }) {
   const {
     width: gridWidth,
@@ -334,12 +270,10 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
   const [dashboardLoadError, setDashboardLoadError] = useState('');
   const [isSavingDashboard, setIsSavingDashboard] = useState(false);
   const [dashboardSaveError, setDashboardSaveError] = useState('');
+  const [dashboardSummary, setDashboardSummary] = useState(null);
 
   const [isWidgetPickerOpen, setIsWidgetPickerOpen] = useState(false);
   const [activeWidgetSettingsId, setActiveWidgetSettingsId] = useState(null);
-
-  const [logsByTrackerId, setLogsByTrackerId] = useState({});
-  const [isRefreshingImpactWidget, setIsRefreshingImpactWidget] = useState({});
 
   const saveRequestIdRef = useRef(0);
 
@@ -420,6 +354,30 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadDashboardSummary = async () => {
+      try {
+        const response = await fetchDashboardSummaryApi();
+        if (!cancelled) {
+          setDashboardSummary(response);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setDashboardSummary(null);
+        }
+      }
+    };
+
+    loadDashboardSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trackers]);
+
+  useEffect(() => {
     if (!isHydrated) return;
 
     const currentRequestId = ++saveRequestIdRef.current;
@@ -448,44 +406,6 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
       clearTimeout(timer);
     };
   }, [widgets, layouts, isHydrated]);
-
-  useEffect(() => {
-    if (!selectedImpactBuildTrackerIds.length) return;
-
-    const missingIds = selectedImpactBuildTrackerIds.filter((trackerId) => !Array.isArray(logsByTrackerId[trackerId]));
-    if (!missingIds.length) return;
-
-    let cancelled = false;
-
-    const fetchLogs = async () => {
-      try {
-        const entries = await Promise.all(
-          missingIds.map(async (trackerId) => {
-            const logs = await fetchHabitLogsApi(trackerId);
-            return [trackerId, logs];
-          })
-        );
-
-        if (cancelled) return;
-
-        setLogsByTrackerId((prev) => {
-          const next = { ...prev };
-          entries.forEach(([trackerId, logs]) => {
-            next[trackerId] = logs;
-          });
-          return next;
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchLogs();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedImpactBuildTrackerIds, logsByTrackerId]);
 
   const handleAddWidget = (widgetType) => {
     const definition = WIDGET_DEFINITIONS[widgetType];
@@ -554,31 +474,12 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
     );
   };
 
-  const refreshImpactWidget = async (widgetId, trackerIds) => {
-    const buildTrackerIds = trackerIds.filter((trackerId) => trackerMap[trackerId]?.type === 'build');
-    if (!buildTrackerIds.length) return;
-
-    setIsRefreshingImpactWidget((prev) => ({ ...prev, [widgetId]: true }));
-
+  const refreshDashboardSummary = async () => {
     try {
-      const entries = await Promise.all(
-        buildTrackerIds.map(async (trackerId) => {
-          const logs = await fetchHabitLogsApi(trackerId);
-          return [trackerId, logs];
-        })
-      );
-
-      setLogsByTrackerId((prev) => {
-        const next = { ...prev };
-        entries.forEach(([trackerId, logs]) => {
-          next[trackerId] = logs;
-        });
-        return next;
-      });
+      const response = await fetchDashboardSummaryApi();
+      setDashboardSummary(response);
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsRefreshingImpactWidget((prev) => ({ ...prev, [widgetId]: false }));
     }
   };
 
@@ -734,26 +635,26 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
                         {widget.type === 'impactSummary' && (
                           <ImpactSummaryWidget
                             selectedTrackers={selectedTrackerIds.map((trackerId) => trackerMap[trackerId]).filter(Boolean)}
-                            logsByTrackerId={logsByTrackerId}
-                            isRefreshing={!!isRefreshingImpactWidget[widget.id]}
-                            onRefresh={() => refreshImpactWidget(widget.id, selectedTrackerIds)}
+                            impactRows={dashboardSummary?.impact_rows || []}
+                            isRefreshing={isLoadingDashboard && !dashboardSummary}
+                            onRefresh={refreshDashboardSummary}
                             onOpenTracker={(tracker) => onSelectTracker(tracker.id, normalizeCategory(tracker.category))}
                             sourceLabel={impactSourceLabel}
                           />
                         )}
 
-                        {widget.type === 'trackerOverview' && <TrackerOverviewWidget trackers={trackers} />}
+                        {widget.type === 'trackerOverview' && <TrackerOverviewWidget overview={dashboardSummary?.overview} />}
 
                         {widget.type === 'categoryBreakdown' && (
                           <CategoryBreakdownWidget
-                            trackers={trackers}
+                            categories={dashboardSummary?.category_breakdown || []}
                             onOpenCategory={(category) => onSelectCategory(category)}
                           />
                         )}
 
                         {widget.type === 'topImpact' && (
                           <TopImpactWidget
-                            trackers={trackers}
+                            rows={dashboardSummary?.top_impact_rows || []}
                             onOpenTracker={(tracker) => onSelectTracker(tracker.id, normalizeCategory(tracker.category))}
                           />
                         )}
@@ -1073,7 +974,7 @@ function ImpactTrackerSourceSettings({ widget, trackerMap, impactCandidates, onC
 
 function ImpactSummaryWidget({
   selectedTrackers,
-  logsByTrackerId,
+  impactRows,
   isRefreshing,
   onRefresh,
   onOpenTracker,
@@ -1082,17 +983,16 @@ function ImpactSummaryWidget({
   const rows = useMemo(
     () =>
       selectedTrackers.map((tracker) => {
-        const hasLogsLoaded = Array.isArray(logsByTrackerId[tracker.id]);
-        const logs = hasLogsLoaded ? logsByTrackerId[tracker.id] : [];
-        const impact = getImpactContribution(tracker, logs);
+        const impact = impactRows.find((row) => row.tracker.id === tracker.id);
 
         return {
           tracker,
-          hasLogsLoaded,
-          ...impact
+          mainAmount: impact?.main_amount ?? 0,
+          impactValue: impact?.impact_value ?? 0,
+          modeLabel: impact?.mode_label ?? 'No impact configured'
         };
       }),
-    [selectedTrackers, logsByTrackerId]
+    [selectedTrackers, impactRows]
   );
 
   const totalsByUnit = useMemo(
@@ -1142,7 +1042,6 @@ function ImpactSummaryWidget({
       <div className="space-y-2 overflow-y-auto pr-1">
         {rows.map((row) => {
           const impactUnit = row.tracker.impact_unit || '$';
-          const showLoadingState = row.tracker.type === 'build' && !row.hasLogsLoaded;
 
           return (
             <button
@@ -1158,9 +1057,7 @@ function ImpactSummaryWidget({
                     {normalizeCategory(row.tracker.category)} · {row.modeLabel}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {showLoadingState
-                      ? 'Loading log data...'
-                      : `Basis: ${formatValue(row.mainAmount)} ${row.tracker.unit}`}
+                    Basis: {formatValue(row.mainAmount)} {row.tracker.unit}
                   </p>
                 </div>
 
@@ -1179,20 +1076,12 @@ function ImpactSummaryWidget({
   );
 }
 
-function TrackerOverviewWidget({ trackers }) {
-  const total = trackers.length;
-  const active = trackers.filter((tracker) => tracker.is_active).length;
-  const stopped = Math.max(0, total - active);
-  const categoryCount = new Set(trackers.map((tracker) => normalizeCategory(tracker.category))).size;
-
-  const byType = trackers.reduce(
-    (acc, tracker) => {
-      const type = tracker.type || 'other';
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    },
-    { quit: 0, build: 0, boolean: 0 }
-  );
+function TrackerOverviewWidget({ overview }) {
+  const total = overview?.total ?? 0;
+  const active = overview?.active ?? 0;
+  const stopped = overview?.paused ?? Math.max(0, total - active);
+  const categoryCount = overview?.categories ?? 0;
+  const byType = overview?.by_type || { quit: 0, build: 0, boolean: 0 };
 
   return (
     <div className="h-full flex flex-col gap-4">
@@ -1212,18 +1101,8 @@ function TrackerOverviewWidget({ trackers }) {
   );
 }
 
-function CategoryBreakdownWidget({ trackers, onOpenCategory }) {
-  const rows = useMemo(() => {
-    const grouped = trackers.reduce((acc, tracker) => {
-      const category = normalizeCategory(tracker.category);
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(grouped)
-      .map(([category, count]) => ({ category, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [trackers]);
+function CategoryBreakdownWidget({ categories, onOpenCategory }) {
+  const rows = categories || [];
 
   if (!rows.length) {
     return <div className="h-full flex items-center justify-center text-sm text-gray-500">No categories yet.</div>;
@@ -1256,25 +1135,10 @@ function CategoryBreakdownWidget({ trackers, onOpenCategory }) {
   );
 }
 
-function TopImpactWidget({ trackers, onOpenTracker }) {
-  const rows = useMemo(
-    () =>
-      trackers
-        .filter((tracker) => tracker.type !== 'boolean' && toSafeNumber(tracker.impact_amount) > 0)
-        .map((tracker) => {
-          const dayImpact = getImpactPerDay(tracker);
-          return {
-            tracker,
-            dayImpact,
-            monthImpact: dayImpact * 30
-          };
-        })
-        .sort((a, b) => b.monthImpact - a.monthImpact)
-        .slice(0, 6),
-    [trackers]
-  );
+function TopImpactWidget({ rows, onOpenTracker }) {
+  const topRows = rows || [];
 
-  if (!rows.length) {
+  if (!topRows.length) {
     return (
       <div className="h-full flex items-center justify-center text-sm text-gray-500">No impact settings configured yet.</div>
     );
@@ -1282,7 +1146,7 @@ function TopImpactWidget({ trackers, onOpenTracker }) {
 
   return (
     <div className="h-full space-y-2">
-      {rows.map((row, index) => (
+      {topRows.map((row, index) => (
         <button
           key={row.tracker.id}
           type="button"
@@ -1299,7 +1163,7 @@ function TopImpactWidget({ trackers, onOpenTracker }) {
 
             <div className="text-right">
               <p className="text-sm font-semibold text-stone-900">
-                {formatImpact(row.monthImpact)} {row.tracker.impact_unit || '$'}
+                {formatImpact(row.month_impact)} {row.tracker.impact_unit || '$'}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">per month estimate</p>
             </div>

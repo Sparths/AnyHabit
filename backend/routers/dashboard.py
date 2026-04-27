@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..analytics import build_dashboard_summary
 from ..deps import get_db
 from ..time_utils import utcnow_naive
 
@@ -36,6 +37,15 @@ def _get_or_create_home_state(db: Session):
     db.commit()
     db.refresh(state)
     return state
+
+
+@router.get("/summary", response_model=schemas.DashboardSummary)
+def read_dashboard_summary(db: Session = Depends(get_db)):
+    trackers = db.query(models.Tracker).all()
+    habit_logs = db.query(models.HabitLog).all()
+    journal_entries = db.query(models.JournalEntry).all()
+
+    return build_dashboard_summary(trackers, habit_logs, journal_entries)
 
 
 @router.get("/home", response_model=schemas.DashboardStateResponse)
