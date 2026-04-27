@@ -92,41 +92,6 @@ Open **http://localhost** (or your device's IP) in your browser.
 
 ---
 
-## 🧪 Testing
-
-AnyHabit includes comprehensive unit tests for both backend and frontend to ensure code quality.
-
-### Quick Start
-
-Run all tests:
-```bash
-./run-tests.sh all
-```
-
-Run backend tests only:
-```bash
-./run-tests.sh backend
-```
-
-Run frontend tests only:
-```bash
-./run-tests.sh frontend
-```
-
-Run with coverage report:
-```bash
-./run-tests.sh all --coverage
-```
-
-### Test Coverage
-
-- **Backend:** 150+ tests covering analytics, API endpoints, and data models
-- **Frontend:** 40+ tests covering components, hooks, and services
-
-For detailed information, see [TESTING.md](TESTING.md).
-
----
-
 ## ⚙️ Configuration
 
 | Variable | Description | Default |
