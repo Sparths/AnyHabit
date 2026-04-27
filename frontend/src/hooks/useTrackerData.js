@@ -36,7 +36,11 @@ export function useTrackerData() {
   const fetchTrackers = async () => {
     try {
       const data = await fetchTrackersApi();
-      setTrackers(data);
+      const normalizedTrackers = data.map((tracker) => ({
+        ...tracker,
+        units_per_interval: Math.max(1, Number(tracker.units_per_interval || 1))
+      }));
+      setTrackers(normalizedTrackers);
     } catch (error) {
       console.error(error);
     }
@@ -126,7 +130,11 @@ export function useTrackerData() {
     if (tracker) {
       const normalizedCategory = (tracker.category || 'General').trim() || 'General';
       setIsCreatingCategory(!existingCategories.includes(normalizedCategory));
-      setTrackerFormData({ ...tracker, category: normalizedCategory });
+      setTrackerFormData({
+        ...tracker,
+        category: normalizedCategory,
+        units_per_interval: Math.max(1, Number(tracker.units_per_interval || 1))
+      });
       return;
     }
 

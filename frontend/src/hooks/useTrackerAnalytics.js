@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  isSamePeriod,
   DAY_MS,
   toUtcDateKey,
   parseApiDate,
@@ -8,6 +7,68 @@ import {
   periodStart,
   addPeriod
 } from '../utils/date';
+
+const PERIOD_LABELS = {
+  day: { singular: 'day', plural: 'days' },
+  week: { singular: 'week', plural: 'weeks' },
+  month: { singular: 'month', plural: 'months' },
+  year: { singular: 'year', plural: 'years' }
+};
+
+const getIntervalCount = (tracker) => Math.max(1, Number(tracker?.units_per_interval || 1));
+
+const shiftPeriod = (date, period, amount) => {
+  const d = new Date(date);
+
+  if (period === 'week') {
+    d.setUTCDate(d.getUTCDate() + amount * 7);
+    return d;
+  }
+  if (period === 'month') {
+    d.setUTCMonth(d.getUTCMonth() + amount);
+    return d;
+  }
+  if (period === 'year') {
+    d.setUTCFullYear(d.getUTCFullYear() + amount);
+    return d;
+  }
+
+  d.setUTCDate(d.getUTCDate() + amount);
+  return d;
+};
+
+const getPeriodsBetween = (startDate, endDate, period) => {
+  const start = periodStart(startDate, period);
+  const end = periodStart(endDate, period);
+
+  if (period === 'day') {
+    return Math.floor((end - start) / DAY_MS);
+  }
+  if (period === 'week') {
+    return Math.floor((end - start) / (DAY_MS * 7));
+  }
+  if (period === 'month') {
+    return (
+      (end.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+      (end.getUTCMonth() - start.getUTCMonth())
+    );
+  }
+  return end.getUTCFullYear() - start.getUTCFullYear();
+};
+
+const getWindowDetails = (date, anchor, period, intervalCount) => {
+  const baseDate = periodStart(date, period);
+  const diffPeriods = getPeriodsBetween(anchor, baseDate, period);
+  const windowIndex = Math.floor(diffPeriods / intervalCount);
+  const start = shiftPeriod(anchor, period, windowIndex * intervalCount);
+  const end = shiftPeriod(start, period, intervalCount);
+  return { windowIndex, start, end };
+};
+
+const getPeriodLabel = (period, intervalCount) => {
+  if (intervalCount === 1) return PERIOD_LABELS[period]?.plural || 'days';
+  return `${intervalCount}-${PERIOD_LABELS[period]?.singular || 'day'} windows`;
+};
 
 export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
   const [currentMath, setCurrentMath] = useState({ mainUnit: 0, targetUnit: 0, impactValue: 0 });
@@ -46,7 +107,10 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
       };
 
       const getMultiplier = (period) => diffMs / getMsPerPeriod(period);
-      const timeBasedUnits = selectedTracker.units_per_amount * getMultiplier(selectedTracker.units_per);
+      const unitsInterval = getIntervalCount(selectedTracker);
+      const timeBasedUnits =
+        selectedTracker.units_per_amount *
+        (diffMs / (getMsPerPeriod(selectedTracker.units_per) * unitsInterval));
 
       if (selectedTracker.type === 'quit') {
         const timeBasedImpact = selectedTracker.impact_amount * getMultiplier(selectedTracker.impact_per);
@@ -60,7 +124,8 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
         const impactPerMs = selectedTracker.impact_amount / getMsPerPeriod(selectedTracker.impact_per);
         const unitsPerMs =
           selectedTracker.units_per_amount > 0
-            ? selectedTracker.units_per_amount / getMsPerPeriod(selectedTracker.units_per)
+            ? selectedTracker.units_per_amount /
+              (getMsPerPeriod(selectedTracker.units_per) * unitsInterval)
             : 0;
 
         const impactPerUnit = unitsPerMs > 0 ? impactPerMs / unitsPerMs : 0;
@@ -77,21 +142,24 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
     const calculateDailyProgress = () => {
       if (selectedTracker.type !== 'build' && selectedTracker.type !== 'boolean') return;
 
-      const periodToCheck = selectedTracker.type === 'boolean' ? selectedTracker.units_per : 'day';
+      const periodToCheck = selectedTracker.units_per;
+      const intervalCount = getIntervalCount(selectedTracker);
+      const anchor = periodStart(parseApiDate(selectedTracker.start_date), periodToCheck);
+      const { start, end } = getWindowDetails(new Date(), anchor, periodToCheck, intervalCount);
+
       const periodLogs = habitLogs.filter((log) => {
         const logDate = parseApiDate(log.timestamp);
-        return isSamePeriod(logDate, periodToCheck);
+        return logDate >= start && logDate < end;
       });
 
-      const todayTotal = periodLogs.reduce((sum, log) => sum + log.amount, 0);
+      const windowTotal = periodLogs.reduce((sum, log) => sum + Number(log.amount || 0), 0);
+      const windowTarget =
+        selectedTracker.type === 'boolean'
+          ? 1
+          : Math.max(0, Number(selectedTracker.units_per_amount || 0));
 
-      let dailyTarget = selectedTracker.units_per_amount;
-      if (selectedTracker.units_per === 'week') dailyTarget /= 7;
-      if (selectedTracker.units_per === 'month') dailyTarget /= 30.44;
-      if (selectedTracker.units_per === 'year') dailyTarget /= 365.25;
-
-      const percentage = dailyTarget > 0 ? Math.min(100, (todayTotal / dailyTarget) * 100) : 0;
-      setDailyProgress({ total: todayTotal, target: dailyTarget, percentage });
+      const percentage = windowTarget > 0 ? Math.min(100, (windowTotal / windowTarget) * 100) : 0;
+      setDailyProgress({ total: windowTotal, target: windowTarget, percentage });
     };
 
     calculateSavings();
@@ -223,6 +291,7 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
       selectedTracker.type === 'boolean' || selectedTracker.type === 'build'
         ? selectedTracker.units_per
         : 'day';
+    const intervalCount = getIntervalCount(selectedTracker);
 
     const threshold =
       selectedTracker.type === 'boolean'
@@ -231,32 +300,29 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
           ? Math.max(0, Number(selectedTracker.units_per_amount || 0))
           : 0.0001;
 
-    const byPeriod = new Map();
+    const trackerStart = periodStart(parseApiDate(selectedTracker.start_date), streakPeriod);
+    const totalsByWindow = new Map();
+
     habitLogs.forEach((log) => {
       const ts = parseApiDate(log.timestamp);
-      const key = toUtcDateKey(periodStart(ts, streakPeriod));
-      byPeriod.set(key, (byPeriod.get(key) || 0) + Number(log.amount || 0));
+      const { windowIndex } = getWindowDetails(ts, trackerStart, streakPeriod, intervalCount);
+      if (windowIndex < 0) return;
+      totalsByWindow.set(windowIndex, (totalsByWindow.get(windowIndex) || 0) + Number(log.amount || 0));
     });
 
-    const trackerStart = periodStart(parseApiDate(selectedTracker.start_date), streakPeriod);
-    const firstLoggedPeriod = habitLogs.reduce((earliest, log) => {
-      const candidate = periodStart(parseApiDate(log.timestamp), streakPeriod);
-      if (!earliest || candidate < earliest) return candidate;
-      return earliest;
-    }, null);
+    const { windowIndex: currentWindowIndex } = getWindowDetails(
+      new Date(),
+      trackerStart,
+      streakPeriod,
+      intervalCount
+    );
 
-    const scanStart =
-      firstLoggedPeriod && firstLoggedPeriod < trackerStart ? firstLoggedPeriod : trackerStart;
-    const todayPeriod = periodStart(new Date(), streakPeriod);
-
-    let cursor = new Date(scanStart);
     let longest = 0;
     let running = 0;
     const completedPeriods = [];
 
-    while (cursor <= todayPeriod) {
-      const key = toUtcDateKey(cursor);
-      const amount = byPeriod.get(key) || 0;
+    for (let i = 0; i <= currentWindowIndex; i += 1) {
+      const amount = totalsByWindow.get(i) || 0;
       const done = amount >= threshold;
       completedPeriods.push(done);
 
@@ -266,8 +332,6 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
       } else {
         running = 0;
       }
-
-      cursor = addPeriod(cursor, streakPeriod);
     }
 
     let current = 0;
@@ -276,14 +340,7 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
       current += 1;
     }
 
-    const periodLabel =
-      streakPeriod === 'day'
-        ? 'days'
-        : streakPeriod === 'week'
-          ? 'weeks'
-          : streakPeriod === 'month'
-            ? 'months'
-            : 'years';
+    const periodLabel = getPeriodLabel(streakPeriod, intervalCount);
 
     return { current, longest, periodLabel };
   }, [selectedTracker, habitLogs, journals]);

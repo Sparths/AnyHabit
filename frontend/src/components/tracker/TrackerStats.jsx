@@ -1,5 +1,19 @@
 import { TrendingUp, Activity, CheckCircle2, Flame, Coins } from 'lucide-react';
 
+const PERIOD_LABELS = {
+  day: { singular: 'day', plural: 'days' },
+  week: { singular: 'week', plural: 'weeks' },
+  month: { singular: 'month', plural: 'months' },
+  year: { singular: 'year', plural: 'years' }
+};
+
+const formatWindowLabel = (tracker) => {
+  const interval = Math.max(1, Number(tracker.units_per_interval || 1));
+  const period = PERIOD_LABELS[tracker.units_per] || PERIOD_LABELS.day;
+  const label = interval === 1 ? period.singular : period.plural;
+  return interval === 1 ? `this ${label}` : `this ${interval} ${label}`;
+};
+
 function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats }) {
   return (
     <div className="px-4 md:px-10 pb-10 flex flex-col">
@@ -11,9 +25,9 @@ function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats
           </div>
           {selectedTracker.type === 'boolean' ? (
             <div className="mt-4 flex items-center gap-3">
-              {dailyProgress.total >= 1 ? (
+              {dailyProgress.total >= dailyProgress.target ? (
                 <div className="text-emerald-500 flex items-center gap-2 font-medium text-lg">
-                  <CheckCircle2 size={24} /> Done for this {selectedTracker.units_per}!
+                  <CheckCircle2 size={24} /> Done for {formatWindowLabel(selectedTracker)}!
                 </div>
               ) : (
                 <div className="text-gray-400 font-medium text-lg">Not completed yet</div>
@@ -29,7 +43,7 @@ function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats
               {selectedTracker.type === 'build' && (
                 <div className="mt-6">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-stone-600">Today's Progress</span>
+                    <span className="font-medium text-stone-600">Current Window Progress</span>
                     <span className="text-stone-400">
                       {dailyProgress.total.toFixed(1)} / {dailyProgress.target.toFixed(1)}
                     </span>
