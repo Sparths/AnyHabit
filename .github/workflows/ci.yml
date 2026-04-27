@@ -3,8 +3,6 @@ name: AnyHabit CI
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   frontend-lint:
@@ -22,7 +20,7 @@ jobs:
         node-version: '22' # Matching your Dockerfile
         
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
       
     - name: Run ESLint
       run: npm run lint

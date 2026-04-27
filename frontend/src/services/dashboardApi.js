@@ -14,6 +14,10 @@ export async function fetchHomeDashboardApi() {
   return requestJson('/dashboard/home');
 }
 
+export async function fetchDashboardSummaryApi() {
+  return requestJson('/dashboard/summary');
+}
+
 export async function saveHomeDashboardApi(payload) {
   return requestJson('/dashboard/home', {
     method: 'PUT',

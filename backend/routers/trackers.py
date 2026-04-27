@@ -4,10 +4,68 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..analytics import build_tracker_analytics
 from ..deps import get_db
 from ..time_utils import to_utc_naive, utcnow_naive
 
 router = APIRouter(prefix="/trackers", tags=["trackers"])
+
+
+@router.get("/{tracker_id}/", response_model=schemas.Tracker)
+def read_tracker(tracker_id: int, db: Session = Depends(get_db)):
+    db_tracker = db.query(models.Tracker).filter(models.Tracker.id == tracker_id).first()
+    if db_tracker is None:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+    return db_tracker
+
+
+@router.get("/{tracker_id}/analytics", response_model=schemas.TrackerAnalytics)
+def read_tracker_analytics(tracker_id: int, db: Session = Depends(get_db)):
+    db_tracker = db.query(models.Tracker).filter(models.Tracker.id == tracker_id).first()
+    if db_tracker is None:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+
+    habit_logs = (
+        db.query(models.HabitLog)
+        .filter(models.HabitLog.tracker_id == tracker_id)
+        .order_by(models.HabitLog.timestamp.asc())
+        .all()
+    )
+    journal_entries = (
+        db.query(models.JournalEntry)
+        .filter(models.JournalEntry.tracker_id == tracker_id)
+        .order_by(models.JournalEntry.timestamp.asc())
+        .all()
+    )
+
+    return build_tracker_analytics(db_tracker, habit_logs, journal_entries)
+
+
+@router.get("/{tracker_id}/bundle", response_model=schemas.TrackerBundle)
+def read_tracker_bundle(tracker_id: int, db: Session = Depends(get_db)):
+    db_tracker = db.query(models.Tracker).filter(models.Tracker.id == tracker_id).first()
+    if db_tracker is None:
+        raise HTTPException(status_code=404, detail="Tracker not found")
+
+    habit_logs = (
+        db.query(models.HabitLog)
+        .filter(models.HabitLog.tracker_id == tracker_id)
+        .order_by(models.HabitLog.timestamp.asc())
+        .all()
+    )
+    journal_entries = (
+        db.query(models.JournalEntry)
+        .filter(models.JournalEntry.tracker_id == tracker_id)
+        .order_by(models.JournalEntry.timestamp.asc())
+        .all()
+    )
+
+    return schemas.TrackerBundle(
+        tracker=db_tracker,
+        habit_logs=habit_logs,
+        journal_entries=journal_entries,
+        analytics=build_tracker_analytics(db_tracker, habit_logs, journal_entries),
+    )
 
 
 @router.post("/{tracker_id}/reset", response_model=schemas.Tracker)
