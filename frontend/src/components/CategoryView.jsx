@@ -55,15 +55,13 @@ function CategoryView({
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-base font-semibold text-stone-900 truncate">{tracker.name}</h3>
                       <span
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${
-                          tracker.type === 'quit' ? 'bg-rose-50 text-rose-600' : 'bg-stone-100 text-stone-600'
-                        }`}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-stone-100 text-stone-800"
                       >
                         {tracker.type}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${
-                          tracker.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
+                          tracker.is_active ? 'bg-stone-100 text-stone-800' : 'bg-gray-100 text-gray-500'
                         }`}
                       >
                         {tracker.is_active ? 'Active' : 'Stopped'}

@@ -65,9 +65,7 @@ function TrackerHeader({
               {(selectedTracker.category || 'General').trim() || 'General'}
             </button>
             <span
-              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                selectedTracker.type === 'quit' ? 'bg-rose-50 text-rose-600' : 'bg-stone-100 text-stone-600'
-              }`}
+              className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-800"
             >
               {selectedTracker.type}
             </span>
@@ -128,7 +126,7 @@ function TrackerHeader({
           {selectedTracker.type === 'quit' && (
             <button
               onClick={() => handleResetTracker(selectedTracker.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-sm font-medium transition-colors mr-2"
+              className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl text-sm font-medium transition-colors mr-2"
             >
               <RotateCcw size={16} /> Log Relapse
             </button>
@@ -155,7 +153,7 @@ function TrackerHeader({
           </button>
           <button
             onClick={() => deleteTracker(selectedTracker.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-900 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
           >
             <Trash2 size={16} /> Delete
           </button>
