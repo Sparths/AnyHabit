@@ -143,8 +143,8 @@ curl http://localhost:8000/api/trackers/1/bundle
 ### Interactive API Documentation
 
 FastAPI provides built-in interactive documentation:
-- **[Swagger UI](http://localhost:8000/docs)** - Try endpoints live
-- **[ReDoc](http://localhost:8000/redoc)** - Alternative documentation format
+- **[Swagger UI](https://anyhabit.onrender.com/docs)** - Try endpoints live
+- **[ReDoc](https://anyhabit.onrender.com/redoc)** - Alternative documentation format
 
 ---
 
