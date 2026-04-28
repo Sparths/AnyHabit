@@ -45,13 +45,7 @@ If you're creating a frontend application:
 
 If you're contributing to the backend:
 
-1. **[../TESTING.md](../TESTING.md)** - Testing Guide
-   - Run tests: `pytest`
-   - Test structure
-   - How to add new tests
-   - Coverage info
-
-2. **Code files:**
+1. **Code files:**
    - [models.py](./models.py) - Database models
    - [schemas.py](./schemas.py) - Request/response schemas
    - [analytics.py](./analytics.py) - Computation logic
@@ -88,12 +82,6 @@ curl http://localhost:8000/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run tests
-pytest
-
-# Run with coverage
-pytest --cov=. --cov-report=html
-
 # Start development server
 python -m uvicorn main:app --reload
 
@@ -113,7 +101,6 @@ python -m uvicorn main:app --reload
 | Build a custom frontend | [Frontend Integration](./FRONTEND_INTEGRATION.md) |
 | Integrate into an existing app | [Frontend Integration](./FRONTEND_INTEGRATION.md) |
 | Look up endpoint details | [Full README](./README.md) |
-| Add tests | [Testing Guide](../TESTING.md) |
 | Contribute code | [Contributing Guide](../CONTRIBUTING.md) |
 | Debug an issue | Search [Full README](./README.md) or GitHub Issues |
 
@@ -149,9 +136,6 @@ python -m uvicorn main:app --reload
 ### Q: Can I use this API for my own frontend?
 **A:** Yes! See [Frontend Integration Guide](./FRONTEND_INTEGRATION.md)
 
-### Q: How do I run tests?
-**A:** See [Testing Guide](../TESTING.md) - Quick command: `pytest`
-
 ### Q: What frameworks can I use?
 **A:** Any framework (React, Vue, Svelte, vanilla JS, Flutter, mobile apps, etc.) - It's just HTTP!
 
@@ -160,7 +144,6 @@ python -m uvicorn main:app --reload
 ## 🔗 Related Documentation
 
 - **[Main Project README](../README.md)** - Project overview
-- **[Testing Guide](../TESTING.md)** - How to run tests
 - **[Contributing Guidelines](../CONTRIBUTING.md)** - How to contribute
 - **[GitHub Issues](https://github.com/Sparths/AnyHabit/issues)** - Report bugs
 - **[Discord Community](https://discord.gg/ajknBq5zcH)** - Get help
@@ -193,10 +176,9 @@ python -m uvicorn main:app --reload
 4. [Full README - Examples](./README.md#examples) (10 min)
 
 ### If you're contributing code
-1. [Testing Guide](../TESTING.md)
-2. [Full README](./README.md) - Understand all endpoints
-3. Browse [routers/](./routers/) directory
-4. Check [models.py](./models.py) and [schemas.py](./schemas.py)
+1. [Full README](./README.md) - Understand all endpoints
+2. Browse [routers/](./routers/) directory
+3. Check [models.py](./models.py) and [schemas.py](./schemas.py)
 
 ---
 
