@@ -10,6 +10,7 @@ import {
   Trash2,
   Menu
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const PERIOD_LABELS = {
   day: { singular: 'day', plural: 'days' },
@@ -46,6 +47,7 @@ function TrackerHeader({
   openTrackerModal,
   deleteTracker
 }) {
+  const navigate = useNavigate();
   const ownerOnlyButtonClass = canManageTracker
     ? 'bg-white border border-gray-200 text-stone-700 hover:bg-gray-50'
     : 'bg-stone-100 border border-stone-200 text-stone-400 cursor-not-allowed';
@@ -63,7 +65,9 @@ function TrackerHeader({
             <button
               type="button"
               onClick={() => {
-                setSelectedCategory((selectedTracker.category || 'General').trim() || 'General');
+                const nextCategory = (selectedTracker.category || 'General').trim() || 'General';
+                setSelectedCategory(nextCategory);
+                navigate(`/category/${encodeURIComponent(nextCategory)}`);
               }}
               className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
             >

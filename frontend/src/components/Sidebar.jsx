@@ -1,26 +1,49 @@
 import { Plus, Settings, ChevronDown, Home, X } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppState } from '../state/AppStateContext';
 
-function Sidebar({
-  user,
-  isSidebarOpen,
-  setIsSidebarOpen,
-  trackers,
-  groups,
-  sortedCategoryEntries,
-  activeCategory,
-  collapsedCategories,
-  setCollapsedCategories,
-  onHomeClick,
-  isHomeActive,
-  onSelectCategory,
-  onSelectTracker,
-  selectedTrackerId,
-  openTrackerModal,
-  setIsSettingsOpen,
-  onLogout
-}) {
+function Sidebar({ isHomeActive }) {
+  const navigate = useNavigate();
+  const {
+    user,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    trackers,
+    sortedCategoryEntries,
+    activeCategory,
+    collapsedCategories,
+    setCollapsedCategories,
+    selectedTrackerId,
+    openTrackerModal,
+    setIsSettingsOpen,
+    setSelectedCategory,
+    setSelectedTrackerId
+  } = useAppState();
   const [trackerTab, setTrackerTab] = useState('all');
+
+  const openHome = () => {
+    setSelectedTrackerId(null);
+    setSelectedCategory(null);
+    setIsSidebarOpen(false);
+    navigate('/');
+  };
+
+  const openCategory = (category) => {
+    setSelectedCategory(category);
+    setSelectedTrackerId(null);
+    setIsSidebarOpen(false);
+    navigate(`/category/${encodeURIComponent(category)}`);
+  };
+
+  const openTracker = (trackerId, category) => {
+    if (category) {
+      setSelectedCategory(category);
+    }
+    setSelectedTrackerId(trackerId);
+    setIsSidebarOpen(false);
+    navigate(`/tracker/${trackerId}`);
+  };
 
   const privateTrackers = trackers.filter((t) => !t.group_id);
   const groupTrackers = trackers.filter((t) => t.group_id);
@@ -39,7 +62,7 @@ function Sidebar({
       <div className="flex items-center justify-between mb-8">
         <button
           type="button"
-          onClick={onHomeClick}
+          onClick={openHome}
           className="flex items-center gap-3 rounded-xl px-1 py-1 hover:bg-stone-50 transition-colors"
         >
           <img src="/AnyHabit.png" alt="AnyHabit Logo" className="w-8 h-8 rounded-lg object-cover" />
@@ -65,8 +88,7 @@ function Sidebar({
       <button
         type="button"
         onClick={() => {
-          onHomeClick();
-          setIsSidebarOpen(false);
+          openHome();
         }}
         className={`mb-6 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
           isHomeActive ? 'bg-stone-100 text-stone-900' : 'text-gray-500 hover:bg-gray-100 hover:text-stone-800'
@@ -120,9 +142,8 @@ function Sidebar({
                   <button
                     type="button"
                     onClick={() => {
-                      onSelectCategory(category);
+                      openCategory(category);
                       setCollapsedCategories((prev) => ({ ...prev, [category]: false }));
-                      setIsSidebarOpen(false);
                     }}
                     className="flex-1 min-w-0 text-left flex items-center justify-between rounded-md px-1.5 py-1.5 hover:bg-stone-100/60 transition-colors"
                   >
@@ -152,8 +173,7 @@ function Sidebar({
                       <li
                         key={tracker.id}
                         onClick={() => {
-                          onSelectTracker(tracker.id, category);
-                          setIsSidebarOpen(false);
+                          openTracker(tracker.id, category);
                         }}
                         className={`group flex flex-col px-2.5 py-2 rounded-lg cursor-pointer transition-all ${
                           selectedTrackerId === tracker.id

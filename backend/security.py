@@ -1,31 +1,26 @@
 from __future__ import annotations
 
-import base64
+from datetime import datetime, timedelta, timezone
 import hashlib
-import hmac
-import json
 import os
 import secrets
-import time
 from typing import Any
 
+import jwt
 from fastapi import HTTPException, status
+from fastapi import Response
 
 PASSWORD_ITERATIONS = int(os.environ.get("ANYHABIT_PASSWORD_ITERATIONS", "200000"))
 TOKEN_TTL_SECONDS = int(os.environ.get("ANYHABIT_TOKEN_TTL_SECONDS", str(60 * 60 * 24 * 7)))
 SECRET_KEY = os.environ.get("ANYHABIT_SECRET_KEY", "anyhabit-development-secret")
+JWT_ALGORITHM = os.environ.get("ANYHABIT_JWT_ALGORITHM", "HS256")
+ACCESS_COOKIE_NAME = os.environ.get("ANYHABIT_ACCESS_COOKIE_NAME", "anyhabit_access_token")
+COOKIE_SECURE = os.environ.get("ANYHABIT_COOKIE_SECURE", "true").strip().lower() in {"1", "true", "yes", "on"}
+COOKIE_SAMESITE = os.environ.get("ANYHABIT_COOKIE_SAMESITE", "lax")
+COOKIE_DOMAIN = os.environ.get("ANYHABIT_COOKIE_DOMAIN")
 BOOTSTRAP_EMAIL = os.environ.get("ANYHABIT_BOOTSTRAP_EMAIL", "owner@anyhabit.local")
 BOOTSTRAP_USERNAME = os.environ.get("ANYHABIT_BOOTSTRAP_USERNAME", "owner")
 BOOTSTRAP_PASSWORD = os.environ.get("ANYHABIT_BOOTSTRAP_PASSWORD", "anyhabit")
-
-
-def _base64url_encode(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
-
-
-def _base64url_decode(data: str) -> bytes:
-    padding = "=" * (-len(data) % 4)
-    return base64.urlsafe_b64decode(f"{data}{padding}".encode("utf-8"))
 
 
 def hash_password(password: str, salt: str | None = None) -> str:
@@ -40,39 +35,48 @@ def verify_password(password: str, password_hash: str) -> bool:
     except ValueError:
         return False
 
-    return hmac.compare_digest(hash_password(password, salt_hex).split("$", 1)[1], stored_hash)
+    return secrets.compare_digest(hash_password(password, salt_hex).split("$", 1)[1], stored_hash)
 
 
 def create_access_token(payload: dict[str, Any]) -> str:
+    issued_at = datetime.now(timezone.utc)
+    expires_at = issued_at + timedelta(seconds=TOKEN_TTL_SECONDS)
     token_payload = {
         **payload,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + TOKEN_TTL_SECONDS,
-        "nonce": secrets.token_urlsafe(8),
+        "iat": issued_at,
+        "exp": expires_at,
+        "jti": secrets.token_urlsafe(8),
     }
-    encoded_payload = _base64url_encode(json.dumps(token_payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
-    signature = hmac.new(SECRET_KEY.encode("utf-8"), encoded_payload.encode("utf-8"), hashlib.sha256).digest()
-    return f"{encoded_payload}.{_base64url_encode(signature)}"
+    return jwt.encode(token_payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
     try:
-        encoded_payload, encoded_signature = token.split(".", 1)
-    except ValueError as exc:
+        return jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication token expired") from exc
+    except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token") from exc
 
-    expected_signature = hmac.new(
-        SECRET_KEY.encode("utf-8"), encoded_payload.encode("utf-8"), hashlib.sha256
-    ).digest()
-    if not hmac.compare_digest(_base64url_encode(expected_signature), encoded_signature):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token")
 
-    try:
-        payload = json.loads(_base64url_decode(encoded_payload).decode("utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token") from exc
+def set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=ACCESS_COOKIE_NAME,
+        value=token,
+        max_age=TOKEN_TTL_SECONDS,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        domain=COOKIE_DOMAIN,
+        path="/",
+    )
 
-    if int(payload.get("exp", 0)) < int(time.time()):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication token expired")
 
-    return payload
+def clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=ACCESS_COOKIE_NAME,
+        domain=COOKIE_DOMAIN,
+        path="/",
+        samesite=COOKIE_SAMESITE,
+        secure=COOKIE_SECURE,
+    )

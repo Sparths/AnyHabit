@@ -39,6 +39,9 @@ POST /auth/login
 
 # Current user
 GET /auth/me
+
+# Logout (clears auth cookie)
+POST /auth/logout
 ```
 
 ### Groups
@@ -56,7 +59,10 @@ POST /groups/join
 GET /groups/
 ```
 
-All tracker, log, journal, and dashboard routes require `Authorization: Bearer <token>`.
+All tracker, log, journal, and dashboard routes require authentication.
+
+Browser clients should use the HttpOnly auth cookie and send requests with `credentials: "include"`.
+Non-browser clients can use `Authorization: Bearer <token>`.
 
 
 ### Trackers
@@ -166,6 +172,7 @@ PUT /dashboard/home
 // 1. Create tracker
 const tracker = await fetch('/api/trackers/', {
   method: 'POST',
+  credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     name: 'Morning Run',
@@ -182,6 +189,7 @@ const log = await fetch(
   `/api/trackers/${tracker.id}/logs?timestamp=${new Date().toISOString()}`,
   {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount: 30 })
   }
@@ -190,6 +198,7 @@ const log = await fetch(
 // 3. Add journal entry
 const journal = await fetch(`/api/trackers/${tracker.id}/journal`, {
   method: 'POST',
+  credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     mood: 9,
@@ -201,7 +210,7 @@ const journal = await fetch(`/api/trackers/${tracker.id}/journal`, {
 ### Get complete tracker view
 
 ```javascript
-const data = await fetch(`/api/trackers/1/bundle`).then(r => r.json());
+const data = await fetch(`/api/trackers/1/bundle`, { credentials: 'include' }).then(r => r.json());
 
 // Access everything
 console.log(data.tracker);           // Basic info

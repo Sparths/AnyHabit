@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..access import can_view_group
 from ..deps import get_current_user, get_db
-from ..time_utils import utcnow_naive
+from ..time_utils import utcnow
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -73,7 +73,7 @@ def create_group(
     db.commit()
     db.refresh(group)
 
-    membership = models.GroupMember(group_id=group.id, user_id=current_user.id, role="owner", joined_at=utcnow_naive())
+    membership = models.GroupMember(group_id=group.id, user_id=current_user.id, role="owner", joined_at=utcnow())
     db.add(membership)
     db.commit()
 
@@ -96,7 +96,7 @@ def join_group(
         .first()
     )
     if existing_membership is None:
-        db.add(models.GroupMember(group_id=group.id, user_id=current_user.id, role="member", joined_at=utcnow_naive()))
+        db.add(models.GroupMember(group_id=group.id, user_id=current_user.id, role="member", joined_at=utcnow()))
         db.commit()
 
     return _serialize_group(db, group)

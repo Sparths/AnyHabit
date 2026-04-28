@@ -1,6 +1,8 @@
 # AnyHabit Frontend
 
-The frontend is a Vite + React application for the authenticated AnyHabit workspace. It now expects bearer-token auth from the backend, supports private and shared group trackers, and persists per-user dashboard layout state.
+The frontend is a Vite + React application for the authenticated AnyHabit workspace. It supports private and shared group trackers, persists per-user dashboard layout state, and uses URL-based routing with React Router.
+
+Authentication uses secure HttpOnly cookies from the backend. API requests are sent with `credentials: "include"`; no access token is stored in `localStorage`.
 
 Currently, two official plugins are available:
 
@@ -9,7 +11,7 @@ Currently, two official plugins are available:
 
 ## Local Development
 
-Set `VITE_API_URL` only if you want to point the frontend at a different backend origin. When running through Docker or the same host, the app uses the current origin and sends the stored bearer token automatically.
+Set `VITE_API_URL` only if you want to point the frontend at a different backend origin. When running through Docker or the same host, the app uses the current origin and sends cookie credentials automatically.
 
 ## React Compiler
 

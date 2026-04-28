@@ -1,4 +1,6 @@
 import { Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAppState } from '../state/AppStateContext';
 
 const PERIOD_LABELS = {
   day: { singular: 'day', plural: 'days' },
@@ -21,12 +23,15 @@ const formatScheduleLabel = (tracker) => {
   return `${tracker.units_per_amount} ${tracker.unit} / ${interval} ${periodLabel}`;
 };
 
-function CategoryView({
-  selectedCategory,
-  selectedCategoryTrackers,
-  setIsSidebarOpen,
-  onSelectTracker
-}) {
+function CategoryView() {
+  const navigate = useNavigate();
+  const { selectedCategory, selectedCategoryTrackers, setIsSidebarOpen, setSelectedTrackerId, setSelectedCategory } = useAppState();
+
+  const openTracker = (trackerId) => {
+    setSelectedTrackerId(trackerId);
+    navigate(`/tracker/${trackerId}`);
+  };
+
   return (
     <div className="flex-1 overflow-y-auto px-4 md:px-10 pt-6 md:pt-10 pb-10">
       <div className="flex items-center gap-3 mb-7">
@@ -90,7 +95,10 @@ function CategoryView({
 
                   <button
                     type="button"
-                    onClick={() => onSelectTracker(tracker.id, selectedCategory)}
+                    onClick={() => {
+                      setSelectedCategory(selectedCategory);
+                      openTracker(tracker.id);
+                    }}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-stone-700 hover:bg-white hover:border-stone-300 transition-colors"
                   >
                     Open

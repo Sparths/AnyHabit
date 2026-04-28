@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { clearApiToken, getApiToken, setApiToken } from '../config/api';
-import { fetchCurrentUserApi, loginApi, registerApi } from '../services/authApi';
+import { fetchCurrentUserApi, loginApi, logoutApi, registerApi } from '../services/authApi';
 
 export function useAuth() {
   const [user, setUser] = useState(null);
@@ -9,21 +8,15 @@ export function useAuth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const hydrateUser = async () => {
-    const token = getApiToken();
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const currentUser = await fetchCurrentUserApi();
       setUser(currentUser);
       setError('');
     } catch (requestError) {
-      clearApiToken();
       setUser(null);
-      setError(requestError.message || 'Authentication failed');
+      if (requestError.status !== 401) {
+        setError(requestError.message || 'Authentication failed');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +31,6 @@ export function useAuth() {
     setIsAuthenticating(true);
     try {
       const response = await loginApi({ identifier, password });
-      setApiToken(response.access_token);
       setUser(response.user);
       return response.user;
     } catch (requestError) {
@@ -55,7 +47,6 @@ export function useAuth() {
     setIsAuthenticating(true);
     try {
       const response = await registerApi({ username, email, password });
-      setApiToken(response.access_token);
       setUser(response.user);
       return response.user;
     } catch (requestError) {
@@ -67,8 +58,12 @@ export function useAuth() {
     }
   };
 
-  const logout = () => {
-    clearApiToken();
+  const logout = async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error(error);
+    }
     setUser(null);
     setError('');
   };
