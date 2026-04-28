@@ -11,7 +11,7 @@ from .. import models, schemas
 from ..access import can_view_group, get_tracker_or_404, require_tracker_access
 from ..analytics import build_tracker_analytics
 from ..deps import get_current_user, get_db
-from ..time_utils import to_utc_naive, utcnow_naive
+from ..time_utils import to_utc, utcnow
 
 router = APIRouter(prefix="/trackers", tags=["trackers"])
 
@@ -101,7 +101,7 @@ def _assign_tracker_participants(db: Session, tracker_id: int, participant_ids: 
                 tracker_id=tracker_id,
                 user_id=participant_id,
                 role="owner" if participant_id == owner_id else "participant",
-                added_at=utcnow_naive(),
+                added_at=utcnow(),
             )
         )
 
@@ -189,7 +189,7 @@ def reset_tracker(
 ):
     tracker = require_tracker_access(db, current_user.id, tracker_id)
 
-    reset_at = utcnow_naive()
+    reset_at = utcnow()
 
     relapse_log = models.JournalEntry(
         tracker_id=tracker_id,
@@ -218,9 +218,9 @@ def create_tracker(
     participant_ids = payload.pop("participant_ids", [])
 
     if "start_date" in payload:
-        payload["start_date"] = to_utc_naive(payload["start_date"])
+        payload["start_date"] = to_utc(payload["start_date"])
     else:
-        payload["start_date"] = utcnow_naive()
+        payload["start_date"] = utcnow()
 
     payload["current_streak_start_date"] = payload["start_date"]
     payload["owner_id"] = current_user.id

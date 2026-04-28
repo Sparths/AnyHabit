@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..deps import get_current_user, get_db
-from ..security import create_access_token, hash_password, verify_password
+from ..security import clear_auth_cookie, create_access_token, hash_password, set_auth_cookie, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=schemas.AuthResponse)
-def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(payload: schemas.UserCreate, response: Response, db: Session = Depends(get_db)):
     normalized_email = payload.email.strip().lower()
     normalized_username = payload.username.strip()
 
@@ -35,14 +35,13 @@ def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return schemas.AuthResponse(
-        access_token=create_access_token({"sub": str(user.id)}),
-        user=user,
-    )
+    token = create_access_token({"sub": str(user.id)})
+    set_auth_cookie(response, token)
+    return schemas.AuthResponse(access_token=token, user=user)
 
 
 @router.post("/login", response_model=schemas.AuthResponse)
-def login(payload: schemas.UserLogin, db: Session = Depends(get_db)):
+def login(payload: schemas.UserLogin, response: Response, db: Session = Depends(get_db)):
     normalized_identifier = payload.identifier.strip().lower()
 
     user = (
@@ -56,12 +55,17 @@ def login(payload: schemas.UserLogin, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is disabled")
 
-    return schemas.AuthResponse(
-        access_token=create_access_token({"sub": str(user.id)}),
-        user=user,
-    )
+    token = create_access_token({"sub": str(user.id)})
+    set_auth_cookie(response, token)
+    return schemas.AuthResponse(access_token=token, user=user)
 
 
 @router.get("/me", response_model=schemas.User)
 def read_current_user(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/logout")
+def logout(response: Response):
+    clear_auth_cookie(response)
+    return {"message": "Logged out"}

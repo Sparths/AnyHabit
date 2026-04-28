@@ -14,7 +14,9 @@ import {
   X
 } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
+import { useNavigate } from 'react-router-dom';
 import { fetchDashboardSummaryApi, fetchHomeDashboardApi, saveHomeDashboardApi } from '../../services/dashboardApi';
+import { useAppState } from '../../state/AppStateContext';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -257,7 +259,31 @@ const getSelectedImpactTrackerIds = (widget, trackerMap, candidateIds) => {
   return config.selectedTrackerIds.filter((trackerId) => !!trackerMap[trackerId]);
 };
 
-function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal, setIsGroupManagementOpen }) {
+function HomePage() {
+  const navigate = useNavigate();
+  const {
+    trackers,
+    groups,
+    setIsSidebarOpen,
+    openTrackerModal,
+    setIsGroupManagementOpen,
+    setSelectedCategory,
+    setSelectedTrackerId
+  } = useAppState();
+
+  const openTracker = (trackerId, category) => {
+    if (category) {
+      setSelectedCategory(category);
+    }
+    setSelectedTrackerId(trackerId);
+    navigate(`/tracker/${trackerId}`);
+  };
+
+  const openCategory = (category) => {
+    setSelectedCategory(category);
+    setSelectedTrackerId(null);
+    navigate(`/category/${encodeURIComponent(category)}`);
+  };
   const {
     width: gridWidth,
     mounted: isGridMounted,
@@ -648,7 +674,7 @@ function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelec
                             impactRows={dashboardSummary?.impact_rows || []}
                             isRefreshing={isLoadingDashboard && !dashboardSummary}
                             onRefresh={refreshDashboardSummary}
-                            onOpenTracker={(tracker) => onSelectTracker(tracker.id, normalizeCategory(tracker.category))}
+                            onOpenTracker={(tracker) => openTracker(tracker.id, normalizeCategory(tracker.category))}
                             sourceLabel={impactSourceLabel}
                           />
                         )}
@@ -658,14 +684,14 @@ function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelec
                         {widget.type === 'categoryBreakdown' && (
                           <CategoryBreakdownWidget
                             categories={dashboardSummary?.category_breakdown || []}
-                            onOpenCategory={(category) => onSelectCategory(category)}
+                            onOpenCategory={(category) => openCategory(category)}
                           />
                         )}
 
                         {widget.type === 'topImpact' && (
                           <TopImpactWidget
                             rows={dashboardSummary?.top_impact_rows || []}
-                            onOpenTracker={(tracker) => onSelectTracker(tracker.id, normalizeCategory(tracker.category))}
+                            onOpenTracker={(tracker) => openTracker(tracker.id, normalizeCategory(tracker.category))}
                           />
                         )}
                       </div>

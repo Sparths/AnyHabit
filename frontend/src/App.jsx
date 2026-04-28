@@ -1,268 +1,109 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import './App.css';
+import CategoryView from './components/CategoryView';
 import Sidebar from './components/Sidebar';
 import TrackerView from './components/TrackerView';
-import CategoryView from './components/CategoryView';
-import HomePage from './components/home/HomePage';
-import LogModal from './components/modals/LogModal';
-import TrackerModal from './components/modals/TrackerModal';
-import SettingsModal from './components/modals/SettingsModal';
-import GroupManagementModal from './components/modals/GroupManagementModal';
 import AuthScreen from './components/auth/AuthScreen';
-import { TRACKER_TYPE_OPTIONS } from './constants/tracker';
-import { useAuth } from './hooks/useAuth';
-import { useTheme } from './hooks/useTheme';
-import { useOutsideClick } from './hooks/useOutsideClick';
-import { useTrackerAnalytics } from './hooks/useTrackerAnalytics';
-import { useTrackerData } from './hooks/useTrackerData';
+import HomePage from './components/home/HomePage';
+import GroupManagementModal from './components/modals/GroupManagementModal';
+import LogModal from './components/modals/LogModal';
+import SettingsModal from './components/modals/SettingsModal';
+import TrackerModal from './components/modals/TrackerModal';
+import { useAppState } from './state/AppStateContext';
 
-function App() {
+function HomeRoute() {
+  const { setSelectedTrackerId, setSelectedCategory } = useAppState();
+
+  useEffect(() => {
+    setSelectedTrackerId(null);
+    setSelectedCategory(null);
+  }, [setSelectedCategory, setSelectedTrackerId]);
+
+  return <HomePage />;
+}
+
+function CategoryRoute() {
+  const { categoryName } = useParams();
+  const { setSelectedTrackerId, setSelectedCategory } = useAppState();
+
+  useEffect(() => {
+    setSelectedTrackerId(null);
+    setSelectedCategory(categoryName ? decodeURIComponent(categoryName) : null);
+  }, [categoryName, setSelectedCategory, setSelectedTrackerId]);
+
+  return <CategoryView />;
+}
+
+function TrackerRoute() {
+  const { trackerId } = useParams();
+  const navigate = useNavigate();
+  const { selectedTracker, setSelectedTrackerId, setSelectedCategory } = useAppState();
+
+  useEffect(() => {
+    const nextId = Number(trackerId);
+    if (!Number.isFinite(nextId) || nextId <= 0) {
+      navigate('/', { replace: true });
+      return;
+    }
+    setSelectedTrackerId(nextId);
+  }, [navigate, setSelectedTrackerId, trackerId]);
+
+  useEffect(() => {
+    if (selectedTracker) {
+      setSelectedCategory((selectedTracker.category || 'General').trim() || 'General');
+    }
+  }, [selectedTracker, setSelectedCategory]);
+
+  if (!selectedTracker && trackerId) {
+    return <div className="px-4 md:px-10 pt-8 text-sm text-stone-500">Loading tracker...</div>;
+  }
+
+  return <TrackerView />;
+}
+
+function AppShell() {
+  const location = useLocation();
   const {
-    user,
-    isLoading: isAuthLoading,
-    error: authError,
-    isAuthenticating,
-    login,
-    register,
-    logout,
-    setError: setAuthError
-  } = useAuth();
-  const { theme, setTheme } = useTheme();
-  const isAuthenticated = Boolean(user);
-  const visibleError = isAuthenticated && authError ? authError : '';
-
-  const [currentView, setCurrentView] = useState('home');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isGroupManagementOpen, setIsGroupManagementOpen] = useState(false);
-  const [collapsedCategories, setCollapsedCategories] = useState({});
-  const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
-  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
-  const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-
-  const categoryMenuRef = useRef(null);
-  const typeMenuRef = useRef(null);
-
-  const {
-    trackers,
-    groups,
-    selectedTrackerId,
-    setSelectedTrackerId: setSelectedTrackerIdState,
-    selectedCategory,
-    setSelectedCategory: setSelectedCategoryState,
+    visibleError,
+    dismissVisibleError,
+    theme,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isGroupManagementOpen,
+    setIsGroupManagementOpen,
+    isLogModalOpen,
+    setIsLogModalOpen,
+    isTrackerModalOpen,
+    setIsTrackerModalOpen,
     selectedTracker,
-    journals,
-    habitLogs,
-    journalFormData,
-    setJournalFormData,
     logFormData,
     setLogFormData,
     trackerFormData,
     setTrackerFormData,
+    trackerTypeOptions,
+    categoryMenuRef,
+    typeMenuRef,
+    isCategoryMenuOpen,
+    setIsCategoryMenuOpen,
     isCreatingCategory,
     setIsCreatingCategory,
     existingCategories,
-    sortedCategoryEntries,
-    selectedCategoryTrackers,
-    activeCategory,
-    openTrackerModalData,
-    submitTracker,
-    deleteTracker,
-    toggleTrackerStatus,
-    resetTracker,
-    submitJournal,
-    deleteJournal,
-    submitLog,
-    quickMarkBooleanDone,
-    deleteLog,
+    isTypeMenuOpen,
+    setIsTypeMenuOpen,
+    groups,
+    handleLogSubmit,
+    handleTrackerSubmit,
+    user,
+    setTheme,
+    logout,
     createGroup,
     joinGroup
-  } = useTrackerData(isAuthenticated, user?.id);
+  } = useAppState();
 
-  const { currentMath, dailyProgress, historicalChartData, streakStats, buildHeatmap, memberProgress, shareStats } =
-    useTrackerAnalytics(selectedTracker, habitLogs, journals, isAuthenticated);
-  const canManageSelectedTracker = Boolean(selectedTracker && user && selectedTracker.owner_id === user.id);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCurrentView('home');
-      setSelectedTrackerIdState(null);
-      setSelectedCategoryState(null);
-      setIsSidebarOpen(false);
-    }
-  }, [isAuthenticated, setSelectedCategoryState, setSelectedTrackerIdState]);
-
-  const outsideClickRefs = useMemo(
-    () => [
-      { ref: categoryMenuRef, onOutsideClick: () => setIsCategoryMenuOpen(false) },
-      { ref: typeMenuRef, onOutsideClick: () => setIsTypeMenuOpen(false) }
-    ], []
-  );
-  useOutsideClick(outsideClickRefs);
-
-  const dismissVisibleError = () => setAuthError('');
-
-  const openTrackerModal = (tracker = null) => {
-    setIsCategoryMenuOpen(false);
-    setIsTypeMenuOpen(false);
-    openTrackerModalData(tracker);
-    if (tracker?.group_id && shareStats?.trackerParticipants) {
-      setTrackerFormData((previous) => ({
-        ...previous,
-        group_id: tracker.group_id,
-        participant_ids: shareStats.trackerParticipants.map((participant) => participant.user.id)
-      }));
-    }
-    setIsTrackerModalOpen(true);
-  };
-
-  const handleTrackerSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      await submitTracker();
-      setIsTrackerModalOpen(false);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to save tracker');
-    }
-  };
-
-  const handleDeleteTracker = async (id) => {
-    if (!confirm('Are you sure you want to delete this tracker?')) return;
-    try {
-      await deleteTracker(id);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to delete tracker');
-    }
-  };
-
-  const handleToggleTrackerStatus = async (tracker) => {
-    try {
-      await toggleTrackerStatus(tracker);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to update tracker status');
-    }
-  };
-
-  const handleResetTracker = async (trackerId) => {
-    if (!confirm('Are you sure you want to log a relapse? This will reset your current streak.')) return;
-    try {
-      await resetTracker(trackerId);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to reset tracker');
-    }
-  };
-
-  const handleJournalSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      await submitJournal();
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to save journal entry');
-    }
-  };
-
-  const handleDeleteJournal = async (journalId) => {
-    if (!confirm('Delete this journal entry?')) return;
-    try {
-      await deleteJournal(journalId);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to delete journal entry');
-    }
-  };
-
-  const handleLogSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      await submitLog();
-      setIsLogModalOpen(false);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to save log');
-    }
-  };
-
-  const handleDeleteLog = async (logId) => {
-    if (!confirm('Delete this activity log?')) return;
-    try {
-      await deleteLog(logId);
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to delete log');
-    }
-  };
-
-  const handleQuickBooleanLog = async () => {
-    try {
-      await quickMarkBooleanDone();
-    } catch (error) {
-      console.error(error);
-      setAuthError(error.message || 'Failed to mark tracker complete');
-    }
-  };
-
-  const openHome = () => {
-    setSelectedTrackerIdState(null);
-    setSelectedCategoryState(null);
-    setCurrentView('home');
-    setIsSidebarOpen(false);
-  };
-
-  const handleSelectCategory = (nextCategory) => {
-    const resolvedCategory = typeof nextCategory === 'function' ? nextCategory(selectedCategory) : nextCategory;
-
-    if (!resolvedCategory) {
-      setSelectedTrackerIdState(null);
-      setSelectedCategoryState(null);
-      setCurrentView('home');
-      return;
-    }
-
-    setSelectedCategoryState(resolvedCategory);
-    setSelectedTrackerIdState(null);
-    setCurrentView('category');
-  };
-
-  const handleSelectTracker = (trackerId, category) => {
-    if (!trackerId) {
-      setSelectedTrackerIdState(null);
-      setCurrentView(selectedCategory ? 'category' : 'home');
-      return;
-    }
-
-    if (category) {
-      setSelectedCategoryState(category);
-    }
-    setSelectedTrackerIdState(trackerId);
-    setCurrentView('tracker');
-  };
-
-  const shouldShowHome = currentView === 'home' || (!selectedTracker && !selectedCategory);
-
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 text-stone-500">
-        Loading workspace...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <AuthScreen
-        onLogin={login}
-        onRegister={register}
-        error={authError}
-        isBusy={isAuthenticating}
-      />
-    );
-  }
+  const isHomeActive = location.pathname === '/';
 
   return (
     <div
@@ -291,83 +132,15 @@ function App() {
         />
       )}
 
-      <Sidebar
-        user={user}
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        trackers={trackers}
-        groups={groups}
-        sortedCategoryEntries={sortedCategoryEntries}
-        activeCategory={activeCategory}
-        collapsedCategories={collapsedCategories}
-        setCollapsedCategories={setCollapsedCategories}
-        onHomeClick={openHome}
-        isHomeActive={shouldShowHome}
-        onSelectCategory={handleSelectCategory}
-        onSelectTracker={handleSelectTracker}
-        selectedTrackerId={selectedTrackerId}
-        openTrackerModal={openTrackerModal}
-        setIsSettingsOpen={setIsSettingsOpen}
-        onLogout={logout}
-      />
+      <Sidebar isHomeActive={isHomeActive} />
 
       <div className="app-main flex-1 flex flex-col bg-[#fcfcfc] overflow-hidden">
-        {shouldShowHome ? (
-          <HomePage
-            trackers={trackers}
-            groups={groups}
-            setIsSidebarOpen={setIsSidebarOpen}
-            onSelectTracker={handleSelectTracker}
-            onSelectCategory={handleSelectCategory}
-            openTrackerModal={openTrackerModal}
-            setIsGroupManagementOpen={setIsGroupManagementOpen}
-          />
-        ) : selectedTracker ? (
-          <TrackerView
-            selectedTracker={selectedTracker}
-            canManageTracker={canManageSelectedTracker}
-            dailyProgress={dailyProgress}
-            currentMath={currentMath}
-            streakStats={streakStats}
-            historicalChartData={historicalChartData}
-            buildHeatmap={buildHeatmap}
-            shareStats={shareStats}
-            memberProgress={memberProgress}
-            habitLogs={habitLogs}
-            deleteLog={handleDeleteLog}
-            setIsSidebarOpen={setIsSidebarOpen}
-            setSelectedCategory={handleSelectCategory}
-            setIsLogModalOpen={setIsLogModalOpen}
-            setLogFormData={setLogFormData}
-            onQuickBooleanLog={handleQuickBooleanLog}
-            handleResetTracker={handleResetTracker}
-            toggleTrackerStatus={handleToggleTrackerStatus}
-            openTrackerModal={openTrackerModal}
-            deleteTracker={handleDeleteTracker}
-            journalFormData={journalFormData}
-            setJournalFormData={setJournalFormData}
-            handleJournalSubmit={handleJournalSubmit}
-            journals={journals}
-            deleteJournal={handleDeleteJournal}
-          />
-        ) : selectedCategory ? (
-          <CategoryView
-            selectedCategory={selectedCategory}
-            selectedCategoryTrackers={selectedCategoryTrackers}
-            setIsSidebarOpen={setIsSidebarOpen}
-            onSelectTracker={handleSelectTracker}
-          />
-        ) : (
-          <HomePage
-            trackers={trackers}
-            groups={groups}
-            setIsSidebarOpen={setIsSidebarOpen}
-            onSelectTracker={handleSelectTracker}
-            onSelectCategory={handleSelectCategory}
-            openTrackerModal={openTrackerModal}
-            setIsGroupManagementOpen={setIsGroupManagementOpen}
-          />
-        )}
+        <Routes>
+          <Route path="/" element={<HomeRoute />} />
+          <Route path="/category/:categoryName" element={<CategoryRoute />} />
+          <Route path="/tracker/:trackerId" element={<TrackerRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
 
       <LogModal
@@ -395,7 +168,7 @@ function App() {
         existingCategories={existingCategories}
         isTypeMenuOpen={isTypeMenuOpen}
         setIsTypeMenuOpen={setIsTypeMenuOpen}
-        trackerTypeOptions={TRACKER_TYPE_OPTIONS}
+        trackerTypeOptions={trackerTypeOptions}
         groups={groups}
       />
 
@@ -417,6 +190,24 @@ function App() {
       />
     </div>
   );
+}
+
+function App() {
+  const { isAuthLoading, isAuthenticated, authError, isAuthenticating, login, register } = useAppState();
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 text-stone-500">
+        Loading workspace...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthScreen onLogin={login} onRegister={register} error={authError} isBusy={isAuthenticating} />;
+  }
+
+  return <AppShell />;
 }
 
 export default App;

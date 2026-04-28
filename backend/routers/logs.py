@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..access import require_tracker_access
 from ..deps import get_current_user, get_db
-from ..time_utils import to_utc_naive
+from ..time_utils import to_utc
 
 router = APIRouter(prefix="/trackers/{tracker_id}/logs", tags=["logs"])
 
@@ -25,7 +25,7 @@ def create_log(
         **log.model_dump(),
         tracker_id=tracker_id,
         user_id=current_user.id,
-        timestamp=to_utc_naive(timestamp),
+        timestamp=to_utc(timestamp),
     )
     db.add(db_log)
     db.commit()

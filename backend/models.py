@@ -1,10 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, UniqueConstraint
-from datetime import datetime, timezone
 from .database import Base
-
-
-def utcnow_naive():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+from .time_utils import utcnow
 
 class Tracker(Base):
     __tablename__ = "trackers"
@@ -15,8 +11,8 @@ class Tracker(Base):
     name = Column(String, index=True)
     category = Column(String, default="General", index=True)
     type = Column(String)
-    start_date = Column(DateTime, default=utcnow_naive)
-    current_streak_start_date = Column(DateTime, default=utcnow_naive)
+    start_date = Column(DateTime(timezone=True), default=utcnow)
+    current_streak_start_date = Column(DateTime(timezone=True), default=utcnow)
     impact_amount = Column(Float, default=0.0)
     impact_unit = Column(String, default="$")
     impact_per = Column(String)
@@ -35,7 +31,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime, default=utcnow_naive)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
     is_active = Column(Boolean, default=True)
 
 
@@ -46,7 +42,7 @@ class Group(Base):
     name = Column(String, index=True, nullable=False)
     join_code = Column(String, unique=True, index=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    created_at = Column(DateTime, default=utcnow_naive)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
 
 
 class GroupMember(Base):
@@ -57,7 +53,7 @@ class GroupMember(Base):
     group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     role = Column(String, default="member")
-    joined_at = Column(DateTime, default=utcnow_naive)
+    joined_at = Column(DateTime(timezone=True), default=utcnow)
 
 
 class TrackerParticipant(Base):
@@ -68,7 +64,7 @@ class TrackerParticipant(Base):
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"), index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     role = Column(String, default="participant")
-    added_at = Column(DateTime, default=utcnow_naive)
+    added_at = Column(DateTime(timezone=True), default=utcnow)
 
 
 class JournalEntry(Base):
@@ -77,7 +73,7 @@ class JournalEntry(Base):
     id = Column(Integer, primary_key=True, index=True)
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    timestamp = Column(DateTime, default=utcnow_naive)
+    timestamp = Column(DateTime(timezone=True), default=utcnow)
     mood = Column(Integer, nullable=True)
     content = Column(String)
     is_relapse = Column(Boolean, default=False)
@@ -90,7 +86,7 @@ class HabitLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     tracker_id = Column(Integer, ForeignKey("trackers.id", ondelete="CASCADE"))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    timestamp = Column(DateTime, default=utcnow_naive)
+    timestamp = Column(DateTime(timezone=True), default=utcnow)
     amount = Column(Float, default=1.0)
 
 
@@ -103,4 +99,4 @@ class UserDashboardState(Base):
     name = Column(String, index=True, default="home")
     widgets_json = Column(Text, default="[]")
     layouts_json = Column(Text, default="{}")
-    updated_at = Column(DateTime, default=utcnow_naive, onupdate=utcnow_naive)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

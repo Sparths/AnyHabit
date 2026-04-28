@@ -92,10 +92,16 @@ Open **http://localhost** (or your device's IP) in your browser.
 | :--- | :--- | :--- |
 | `APP_PORT` | The port on which the app is accessible | `80` |
 | `VITE_API_URL` | Backend URL for local frontend development | `http://localhost/api` |
-| `ANYHABIT_SECRET_KEY` | Token signing secret for authentication | `change-me-in-production` |
+| `ANYHABIT_SECRET_KEY` | JWT signing secret for authentication | `change-me-in-production` |
+| `ANYHABIT_CORS_ORIGINS` | Comma-separated allowlist of frontend origins | `http://localhost:5173,...` |
+| `ANYHABIT_COOKIE_SECURE` | Marks auth cookie as secure-only | `true` |
+| `ANYHABIT_COOKIE_SAMESITE` | SameSite policy for auth cookie | `lax` |
+| `ANYHABIT_COOKIE_DOMAIN` | Optional domain scope for auth cookie | unset |
 | `ANYHABIT_BOOTSTRAP_USERNAME` | Initial local login username | `owner` |
 | `ANYHABIT_BOOTSTRAP_EMAIL` | Initial local login email | `owner@anyhabit.local` |
 | `ANYHABIT_BOOTSTRAP_PASSWORD` | Initial local login password | `anyhabit` |
+
+Frontend auth now uses HttpOnly cookies; API calls must include credentials.
 
 **To change the port:**
 1. Create an environment file: `cp .env.example .env`

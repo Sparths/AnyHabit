@@ -59,13 +59,19 @@ All endpoints are prefixed with `/api`. Replace `localhost:8000` with your serve
 
 ## Authentication
 
-AnyHabit now uses bearer-token authentication for all workspace data routes. Register or log in through `/auth`, then send the returned `access_token` as `Authorization: Bearer <token>` on every protected request.
+AnyHabit now uses signed JWT sessions with a secure HttpOnly cookie by default. Register or log in through `/auth`; the backend sets an auth cookie automatically, and subsequent browser requests authenticate via `credentials: "include"`.
+
+For non-browser clients, you can still use bearer auth by passing the returned `access_token` as `Authorization: Bearer <token>`.
 
 The backend seeds a local bootstrap account on first run using these environment variables:
 - `ANYHABIT_BOOTSTRAP_USERNAME`
 - `ANYHABIT_BOOTSTRAP_EMAIL`
 - `ANYHABIT_BOOTSTRAP_PASSWORD`
 - `ANYHABIT_SECRET_KEY`
+- `ANYHABIT_CORS_ORIGINS`
+- `ANYHABIT_COOKIE_SECURE`
+- `ANYHABIT_COOKIE_SAMESITE`
+- `ANYHABIT_COOKIE_DOMAIN`
 
 ---
 
@@ -127,8 +133,10 @@ Specify frequency for impact calculation:
 
 All dates use ISO 8601 format:
 ```
-2024-03-15T10:30:00
+2024-03-15T10:30:00Z
 ```
+
+Timestamps are stored and processed as UTC timezone-aware values.
 
 ---
 

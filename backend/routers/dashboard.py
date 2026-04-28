@@ -7,7 +7,7 @@ from .. import models, schemas
 from ..analytics import build_dashboard_summary
 from ..deps import get_current_user
 from ..deps import get_db
-from ..time_utils import utcnow_naive
+from ..time_utils import utcnow
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -100,7 +100,7 @@ def update_home_dashboard(
 
     state.widgets_json = json.dumps(payload.widgets, separators=(",", ":"), ensure_ascii=True)
     state.layouts_json = json.dumps(payload.layouts, separators=(",", ":"), ensure_ascii=True)
-    state.updated_at = utcnow_naive()
+    state.updated_at = utcnow()
 
     db.commit()
     db.refresh(state)

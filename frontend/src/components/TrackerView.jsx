@@ -3,48 +3,55 @@ import TrackerStats from './tracker/TrackerStats';
 import TrackerCharts from './tracker/TrackerCharts';
 import TrackerLeaderboard from './tracker/TrackerLeaderboard';
 import JournalSection from './tracker/JournalSection';
+import { useAppState } from '../state/AppStateContext';
 
-function TrackerView({
-  selectedTracker,
-  canManageTracker,
-  dailyProgress,
-  currentMath,
-  streakStats,
-  historicalChartData,
-  buildHeatmap,
-  shareStats,
-  habitLogs,
-  deleteLog,
-  setIsSidebarOpen,
-  setSelectedCategory,
-  setIsLogModalOpen,
-  setLogFormData,
-  onQuickBooleanLog,
-  handleResetTracker,
-  toggleTrackerStatus,
-  openTrackerModal,
-  deleteTracker,
-  journalFormData,
-  setJournalFormData,
-  handleJournalSubmit,
-  journals,
-  deleteJournal
-}) {
+function TrackerView() {
+  const {
+    selectedTracker,
+    canManageSelectedTracker,
+    dailyProgress,
+    currentMath,
+    streakStats,
+    historicalChartData,
+    buildHeatmap,
+    shareStats,
+    habitLogs,
+    handleDeleteLog,
+    setIsSidebarOpen,
+    setSelectedCategory,
+    setIsLogModalOpen,
+    setLogFormData,
+    handleQuickBooleanLog,
+    handleResetTracker,
+    handleToggleTrackerStatus,
+    openTrackerModal,
+    handleDeleteTracker,
+    journalFormData,
+    setJournalFormData,
+    handleJournalSubmit,
+    journals,
+    handleDeleteJournal
+  } = useAppState();
+
+  if (!selectedTracker) {
+    return null;
+  }
+
   return (
     <div className="flex-1 overflow-y-auto">
       <TrackerHeader
         selectedTracker={selectedTracker}
-        canManageTracker={canManageTracker}
+        canManageTracker={canManageSelectedTracker}
         dailyProgress={dailyProgress}
         setIsSidebarOpen={setIsSidebarOpen}
         setSelectedCategory={setSelectedCategory}
         setIsLogModalOpen={setIsLogModalOpen}
         setLogFormData={setLogFormData}
-        onQuickBooleanLog={onQuickBooleanLog}
+        onQuickBooleanLog={handleQuickBooleanLog}
         handleResetTracker={handleResetTracker}
-        toggleTrackerStatus={toggleTrackerStatus}
+        toggleTrackerStatus={handleToggleTrackerStatus}
         openTrackerModal={openTrackerModal}
-        deleteTracker={deleteTracker}
+        deleteTracker={handleDeleteTracker}
       />
 
       <TrackerStats
@@ -61,7 +68,7 @@ function TrackerView({
           historicalChartData={historicalChartData}
           buildHeatmap={buildHeatmap}
           habitLogs={habitLogs}
-          deleteLog={deleteLog}
+          deleteLog={handleDeleteLog}
         />
 
         <TrackerLeaderboard shareStats={shareStats} />
@@ -71,7 +78,7 @@ function TrackerView({
           setJournalFormData={setJournalFormData}
           handleJournalSubmit={handleJournalSubmit}
           journals={journals}
-          deleteJournal={deleteJournal}
+          deleteJournal={handleDeleteJournal}
         />
       </div>
     </div>

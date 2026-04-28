@@ -1,4 +1,4 @@
-import { API_URL, getApiToken } from '../config/api';
+import { API_FETCH_OPTIONS, API_URL } from '../config/api';
 
 async function requestJson(path, options) {
   const headers = {
@@ -6,12 +6,8 @@ async function requestJson(path, options) {
     ...(options?.headers || {})
   };
 
-  const token = getApiToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_URL}${path}`, {
+    ...API_FETCH_OPTIONS,
     ...options,
     headers
   });

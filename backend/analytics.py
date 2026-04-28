@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from . import models, schemas
+from .time_utils import ensure_utc, utcnow
 
 DAY_MS = 1000 * 60 * 60 * 24
 
@@ -12,7 +13,8 @@ def get_interval_count(tracker: models.Tracker) -> int:
 
 
 def to_utc_date_key(date: datetime) -> str:
-    return date.strftime("%Y-%m-%d")
+    normalized = ensure_utc(date)
+    return normalized.strftime("%Y-%m-%d") if normalized else ""
 
 
 def format_short_date(date: datetime) -> str:
@@ -26,7 +28,8 @@ def _days_in_month(year: int, month: int) -> int:
 
 
 def period_start(date: datetime, period: str) -> datetime:
-    normalized = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    normalized_date = ensure_utc(date)
+    normalized = normalized_date.replace(hour=0, minute=0, second=0, microsecond=0) if normalized_date else utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
     if period == "week":
         weekday = (normalized.weekday() + 1) % 7
@@ -142,11 +145,11 @@ def _calculate_current_math(
     tracker: models.Tracker,
     habit_logs: list[models.HabitLog],
 ) -> schemas.TrackerCurrentMath:
-    start_date = tracker.start_date
+    start_date = ensure_utc(tracker.start_date)
     if start_date is None:
         return schemas.TrackerCurrentMath()
 
-    diff_ms = (datetime.utcnow() - start_date).total_seconds() * 1000.0
+    diff_ms = (utcnow() - start_date).total_seconds() * 1000.0
     units_interval = get_interval_count(tracker)
 
     def time_based_units() -> float:
@@ -188,13 +191,13 @@ def _calculate_daily_progress(
 
     period_to_check = tracker.units_per
     interval_count = get_interval_count(tracker)
-    anchor = period_start(tracker.start_date, period_to_check)
-    window = get_window_details(datetime.utcnow(), anchor, period_to_check, interval_count)
+    anchor = period_start(ensure_utc(tracker.start_date), period_to_check)
+    window = get_window_details(utcnow(), anchor, period_to_check, interval_count)
 
     period_logs = [
         log
         for log in habit_logs
-        if window["start"] <= log.timestamp < window["end"]
+        if window["start"] <= ensure_utc(log.timestamp) < window["end"]
     ]
 
     window_total = sum(float(log.amount or 0) for log in period_logs)
@@ -213,10 +216,10 @@ def _calculate_streak_stats(
         return schemas.TrackerStreakStats()
 
     if tracker.type == "quit":
-        today = period_start(datetime.utcnow(), "day")
-        tracker_start_day = period_start(tracker.start_date, "day")
+        today = period_start(utcnow(), "day")
+        tracker_start_day = period_start(ensure_utc(tracker.start_date), "day")
         relapse_days = sorted(
-            period_start(entry.timestamp, "day")
+            period_start(ensure_utc(entry.timestamp), "day")
             for entry in journal_entries
             if entry.is_relapse
         )
@@ -245,17 +248,17 @@ def _calculate_streak_stats(
         else 0.0001
     )
 
-    tracker_start = period_start(tracker.start_date, streak_period)
+    tracker_start = period_start(ensure_utc(tracker.start_date), streak_period)
     totals_by_window: dict[int, float] = {}
 
     for log in habit_logs:
-        window = get_window_details(log.timestamp, tracker_start, streak_period, interval_count)
+        window = get_window_details(ensure_utc(log.timestamp), tracker_start, streak_period, interval_count)
         window_index = int(window["window_index"])
         if window_index < 0:
             continue
         totals_by_window[window_index] = totals_by_window.get(window_index, 0.0) + float(log.amount or 0)
 
-    current_window = int(get_window_details(datetime.utcnow(), tracker_start, streak_period, interval_count)["window_index"])
+    current_window = int(get_window_details(utcnow(), tracker_start, streak_period, interval_count)["window_index"])
 
     longest = 0
     running = 0
@@ -301,10 +304,10 @@ def _build_completion_history(
         return []
 
     if tracker.type == "quit":
-        today = period_start(datetime.utcnow(), "day")
-        tracker_start_day = period_start(tracker.start_date, "day")
+        today = period_start(utcnow(), "day")
+        tracker_start_day = period_start(ensure_utc(tracker.start_date), "day")
         relapse_days = {
-            period_start(entry.timestamp, "day")
+            period_start(ensure_utc(entry.timestamp), "day")
             for entry in journal_entries
             if entry.is_relapse
         }
@@ -318,13 +321,13 @@ def _build_completion_history(
 
     streak_period = tracker.units_per
     interval_count = get_interval_count(tracker)
-    tracker_start = period_start(tracker.start_date, streak_period)
-    current_window = int(get_window_details(datetime.utcnow(), tracker_start, streak_period, interval_count)["window_index"])
+    tracker_start = period_start(ensure_utc(tracker.start_date), streak_period)
+    current_window = int(get_window_details(utcnow(), tracker_start, streak_period, interval_count)["window_index"])
     threshold = _get_completion_threshold(tracker)
 
     totals_by_window: dict[int, float] = {}
     for log in habit_logs:
-        window = get_window_details(log.timestamp, tracker_start, streak_period, interval_count)
+        window = get_window_details(ensure_utc(log.timestamp), tracker_start, streak_period, interval_count)
         window_index = int(window["window_index"])
         if window_index < 0:
             continue
@@ -340,7 +343,7 @@ def _build_member_progress(
     journal_entries: list[models.JournalEntry],
 ) -> schemas.TrackerMemberProgress:
     latest_activity = max(
-        [*[log.timestamp for log in habit_logs], *[entry.timestamp for entry in journal_entries]],
+        [*[ensure_utc(log.timestamp) for log in habit_logs], *[ensure_utc(entry.timestamp) for entry in journal_entries]],
         default=None,
     )
 
@@ -427,7 +430,7 @@ def build_tracker_share_stats(
         key=lambda entry: (
             -entry.streak_stats.current,
             -entry.daily_progress.percentage,
-            -(entry.last_activity_at.timestamp() if entry.last_activity_at else 0.0),
+                    -(ensure_utc(entry.last_activity_at).timestamp() if entry.last_activity_at else 0.0),
             entry.user.username.lower(),
         )
     )
@@ -447,7 +450,7 @@ def _build_historical_chart_data(
     habit_logs: list[models.HabitLog],
     journal_entries: list[models.JournalEntry],
 ) -> list[schemas.TrackerChartPoint]:
-    now = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    now = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     lookback_days = 120
     start_date = now - timedelta(days=lookback_days - 1)
 
@@ -458,7 +461,7 @@ def _build_historical_chart_data(
         return []
 
     if tracker.type == "quit":
-        tracker_start = period_start(tracker.start_date, "day")
+        tracker_start = period_start(ensure_utc(tracker.start_date), "day")
         points: list[schemas.TrackerChartPoint] = []
         running_streak = 0
 
@@ -509,7 +512,7 @@ def _build_heatmap(
         return None
 
     days = 168
-    end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     start = end - timedelta(days=days - 1)
     start_weekday = (start.weekday() + 1) % 7
     aligned_start = start - timedelta(days=start_weekday)

@@ -19,13 +19,12 @@ Create a file to handle all API communication:
 ```javascript
 // api.js
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-const TOKEN = localStorage.getItem('anyhabit_access_token');
 
 async function request(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -91,6 +90,8 @@ export const api = {
   },
 };
 ```
+
+Note: The backend sets an HttpOnly JWT cookie on `/auth/login` and `/auth/register`. Keep auth state server-driven by calling `/auth/me` at app startup.
 
 ### 2. Use in React
 
