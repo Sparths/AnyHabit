@@ -290,7 +290,7 @@ function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelec
   const impactCandidates = useMemo(
     () =>
       trackers
-        .filter((tracker) => tracker.type !== 'boolean' && toSafeNumber(tracker.impact_amount) > 0)
+        .filter((tracker) => tracker.type !== 'boolean')
         .sort((a, b) => a.name.localeCompare(b.name)),
     [trackers]
   );
@@ -603,7 +603,7 @@ function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelec
                   : [];
                 const impactSourceLabel = isImpactWidget
                   ? impactConfig?.autoSelect
-                    ? `Source: all impact-enabled trackers (${selectedTrackerIds.length})`
+                    ? `Source: all eligible trackers (${selectedTrackerIds.length})`
                     : `Source: ${selectedTrackerIds.length} selected tracker${selectedTrackerIds.length === 1 ? '' : 's'}`
                   : '';
 
@@ -900,7 +900,7 @@ function ImpactTrackerSourceSettings({ widget, trackerMap, impactCandidates, onC
 
       <p className="text-xs text-gray-500">
         {config.autoSelect
-          ? `Using all impact-enabled trackers (${impactCandidates.length}).`
+          ? `Using all eligible trackers (${impactCandidates.length}).`
           : `Using ${selectedTrackerIds.length} selected tracker${selectedTrackerIds.length === 1 ? '' : 's'}.`}
       </p>
 
@@ -935,7 +935,7 @@ function ImpactTrackerSourceSettings({ widget, trackerMap, impactCandidates, onC
 
           {impactCandidates.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs text-gray-500">
-              No impact-enabled trackers available.
+              No eligible trackers available.
             </div>
           ) : filteredCandidates.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs text-gray-500">

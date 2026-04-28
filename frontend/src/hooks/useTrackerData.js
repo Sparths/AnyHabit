@@ -20,7 +20,7 @@ import {
   toggleTrackerStatusApi
 } from '../services/trackerApi';
 
-export function useTrackerData(isAuthenticated) {
+export function useTrackerData(isAuthenticated, currentUserId) {
   const [trackers, setTrackers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedTrackerId, setSelectedTrackerId] = useState(null);
@@ -71,7 +71,7 @@ export function useTrackerData(isAuthenticated) {
   const fetchJournals = async (trackerId) => {
     try {
       const data = await fetchJournalsApi(trackerId);
-      setJournals(data);
+      setJournals(currentUserId ? data.filter((journal) => journal.user_id === currentUserId) : data);
     } catch (error) {
       console.error(error);
     }
@@ -80,7 +80,7 @@ export function useTrackerData(isAuthenticated) {
   const fetchHabitLogs = async (trackerId) => {
     try {
       const data = await fetchHabitLogsApi(trackerId);
-      setHabitLogs(data);
+      setHabitLogs(currentUserId ? data.filter((log) => log.user_id === currentUserId) : data);
     } catch (error) {
       console.error(error);
     }

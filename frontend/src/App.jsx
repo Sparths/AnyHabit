@@ -17,9 +17,19 @@ import { useTrackerAnalytics } from './hooks/useTrackerAnalytics';
 import { useTrackerData } from './hooks/useTrackerData';
 
 function App() {
-  const { user, isLoading: isAuthLoading, error: authError, login, register, logout, setError: setAuthError } = useAuth();
+  const {
+    user,
+    isLoading: isAuthLoading,
+    error: authError,
+    isAuthenticating,
+    login,
+    register,
+    logout,
+    setError: setAuthError
+  } = useAuth();
   const { theme, setTheme } = useTheme();
   const isAuthenticated = Boolean(user);
+  const visibleError = isAuthenticated && authError ? authError : '';
 
   const [currentView, setCurrentView] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -68,10 +78,11 @@ function App() {
     deleteLog,
     createGroup,
     joinGroup
-  } = useTrackerData(isAuthenticated);
+  } = useTrackerData(isAuthenticated, user?.id);
 
   const { currentMath, dailyProgress, historicalChartData, streakStats, buildHeatmap, memberProgress, shareStats } =
     useTrackerAnalytics(selectedTracker, habitLogs, journals, isAuthenticated);
+  const canManageSelectedTracker = Boolean(selectedTracker && user && selectedTracker.owner_id === user.id);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -89,6 +100,8 @@ function App() {
     ], []
   );
   useOutsideClick(outsideClickRefs);
+
+  const dismissVisibleError = () => setAuthError('');
 
   const openTrackerModal = (tracker = null) => {
     setIsCategoryMenuOpen(false);
@@ -246,7 +259,7 @@ function App() {
         onLogin={login}
         onRegister={register}
         error={authError}
-        isBusy={user === null ? false : true}
+        isBusy={isAuthenticating}
       />
     );
   }
@@ -255,6 +268,22 @@ function App() {
     <div
       className={`app-shell flex h-screen w-full bg-[#fcfcfc] font-sans text-stone-800 ${theme === 'dark' ? 'theme-dark' : ''}`}
     >
+      {visibleError && (
+        <div className="fixed top-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-lg">
+          <div className="flex items-start justify-between gap-3">
+            <p className="leading-6">{visibleError}</p>
+            <button
+              type="button"
+              onClick={dismissVisibleError}
+              className="shrink-0 rounded-lg px-2 py-1 text-rose-500 hover:bg-rose-100 hover:text-rose-700 transition-colors"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-stone-900/50 z-40 md:hidden backdrop-blur-sm"
@@ -296,6 +325,7 @@ function App() {
         ) : selectedTracker ? (
           <TrackerView
             selectedTracker={selectedTracker}
+            canManageTracker={canManageSelectedTracker}
             dailyProgress={dailyProgress}
             currentMath={currentMath}
             streakStats={streakStats}
@@ -352,6 +382,7 @@ function App() {
       <TrackerModal
         isOpen={isTrackerModalOpen}
         setIsTrackerModalOpen={setIsTrackerModalOpen}
+        currentUser={user}
         trackerFormData={trackerFormData}
         setTrackerFormData={setTrackerFormData}
         handleTrackerSubmit={handleTrackerSubmit}

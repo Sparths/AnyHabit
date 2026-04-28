@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 function TrackerModal({
   isOpen,
   setIsTrackerModalOpen,
+  currentUser,
   trackerFormData,
   setTrackerFormData,
   handleTrackerSubmit,
@@ -26,6 +27,7 @@ function TrackerModal({
 
   const selectedTypeLabel =
     trackerTypeOptions.find((typeOption) => typeOption.value === trackerFormData.type)?.label || 'Quit';
+  const ownerGroupOptions = groups.filter((group) => group.owner_id === currentUser?.id);
   const selectedGroup = groups.find((group) => group.id === Number(trackerFormData.group_id)) || null;
   const selectedGroupName = selectedGroup?.name || 'Private tracker';
 
@@ -165,7 +167,7 @@ function TrackerModal({
                         Private tracker
                       </button>
                     </li>
-                    {groups.map((group) => (
+                    {ownerGroupOptions.map((group) => (
                       <li key={group.id}>
                         <button
                           type="button"
@@ -191,6 +193,9 @@ function TrackerModal({
                 </div>
               )}
             </div>
+            <p className="text-[11px] text-stone-400">
+              Shared trackers can only be created in groups you own.
+            </p>
           </div>
 
           {selectedGroup && (

@@ -34,6 +34,7 @@ const formatScheduleLabel = (tracker) => {
 
 function TrackerHeader({
   selectedTracker,
+  canManageTracker,
   dailyProgress,
   setIsSidebarOpen,
   setSelectedCategory,
@@ -45,6 +46,10 @@ function TrackerHeader({
   openTrackerModal,
   deleteTracker
 }) {
+  const ownerOnlyButtonClass = canManageTracker
+    ? 'bg-white border border-gray-200 text-stone-700 hover:bg-gray-50'
+    : 'bg-stone-100 border border-stone-200 text-stone-400 cursor-not-allowed';
+
   return (
     <header className="px-4 md:px-10 pt-6 md:pt-10 pb-6 flex flex-col">
       <div className="flex flex-col xl:flex-row justify-between items-start w-full gap-4">
@@ -137,8 +142,14 @@ function TrackerHeader({
             </button>
           )}
           <button
-            onClick={() => toggleTrackerStatus(selectedTracker)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
+            onClick={() => {
+              if (canManageTracker) {
+                toggleTrackerStatus(selectedTracker);
+              }
+            }}
+            disabled={!canManageTracker}
+            title={!canManageTracker ? 'Owner only' : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${ownerOnlyButtonClass}`}
           >
             {selectedTracker.is_active ? (
               <>
@@ -151,14 +162,30 @@ function TrackerHeader({
             )}
           </button>
           <button
-            onClick={() => openTrackerModal(selectedTracker)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-700 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
+            onClick={() => {
+              if (canManageTracker) {
+                openTrackerModal(selectedTracker);
+              }
+            }}
+            disabled={!canManageTracker}
+            title={!canManageTracker ? 'Owner only' : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${ownerOnlyButtonClass}`}
           >
             <Pencil size={16} /> Edit
           </button>
           <button
-            onClick={() => deleteTracker(selectedTracker.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-stone-900 hover:bg-gray-50 rounded-xl text-sm font-medium transition-colors"
+            onClick={() => {
+              if (canManageTracker) {
+                deleteTracker(selectedTracker.id);
+              }
+            }}
+            disabled={!canManageTracker}
+            title={!canManageTracker ? 'Owner only' : undefined}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+              canManageTracker
+                ? 'bg-white border border-gray-200 text-stone-900 hover:bg-gray-50'
+                : 'bg-stone-100 border border-stone-200 text-stone-400 cursor-not-allowed'
+            }`}
           >
             <Trash2 size={16} /> Delete
           </button>

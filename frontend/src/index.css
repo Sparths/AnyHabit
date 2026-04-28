@@ -19,6 +19,91 @@ body {
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 24, 27, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(24, 24, 27, 0.02);
+  }
+}
+
+.app-main,
+.home-page,
+.app-sidebar {
+  animation: pageFadeIn 320ms ease-out;
+}
+
+.app-modal-card {
+  animation: modalFadeIn 220ms ease-out;
+}
+
+.home-widget-card,
+.rounded-3xl,
+.rounded-2xl {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.home-widget-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.app-shell button {
+  transition: transform 130ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.app-shell button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.app-shell button:disabled {
+  animation: none;
+}
+
+.widget-drag-handle {
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.app-shell .bg-stone-900.text-white:hover {
+  animation: pulseSoft 500ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-main,
+  .home-page,
+  .app-sidebar,
+  .app-modal-card,
+  .home-widget-card,
+  .app-shell button {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .dark-mode {
   color-scheme: dark;
 }

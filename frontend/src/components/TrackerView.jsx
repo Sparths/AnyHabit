@@ -6,6 +6,7 @@ import JournalSection from './tracker/JournalSection';
 
 function TrackerView({
   selectedTracker,
+  canManageTracker,
   dailyProgress,
   currentMath,
   streakStats,
@@ -33,6 +34,7 @@ function TrackerView({
     <div className="flex-1 overflow-y-auto">
       <TrackerHeader
         selectedTracker={selectedTracker}
+        canManageTracker={canManageTracker}
         dailyProgress={dailyProgress}
         setIsSidebarOpen={setIsSidebarOpen}
         setSelectedCategory={setSelectedCategory}

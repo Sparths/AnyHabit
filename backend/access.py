@@ -39,8 +39,6 @@ def can_view_group(db: Session, user_id: int, group_id: int) -> bool:
 def can_access_tracker(db: Session, user_id: int, tracker: models.Tracker) -> bool:
     if tracker.owner_id == user_id:
         return True
-    if tracker.group_id is not None and can_view_group(db, user_id, tracker.group_id):
-        return True
     if get_tracker_participant(db, tracker.id, user_id) is not None:
         return True
     return False

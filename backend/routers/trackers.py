@@ -187,10 +187,9 @@ def reset_tracker(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    tracker = require_tracker_access(db, current_user.id, tracker_id, write=True)
+    tracker = require_tracker_access(db, current_user.id, tracker_id)
 
     reset_at = utcnow_naive()
-    tracker.current_streak_start_date = reset_at
 
     relapse_log = models.JournalEntry(
         tracker_id=tracker_id,
@@ -234,6 +233,11 @@ def create_tracker(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
         if not can_view_group(db, current_user.id, group.id):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this group")
+        if group.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the group owner can create shared trackers",
+            )
 
         allowed_ids = {
             member.user_id
@@ -262,7 +266,10 @@ def read_trackers(current_user: models.User = Depends(get_current_user), db: Ses
         tracker
         for tracker in trackers
         if tracker.owner_id == current_user.id
-        or (tracker.group_id is not None and can_view_group(db, current_user.id, tracker.group_id))
+        or db.query(models.TrackerParticipant)
+        .filter(models.TrackerParticipant.tracker_id == tracker.id, models.TrackerParticipant.user_id == current_user.id)
+        .first()
+        is not None
     ]
 
     participant_counts = dict(
@@ -322,6 +329,11 @@ def edit_tracker(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
         if not can_view_group(db, current_user.id, group.id):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this group")
+        if group.owner_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the group owner can assign trackers to this group",
+            )
         tracker.group_id = group.id
         tracker.visibility = "group"
 

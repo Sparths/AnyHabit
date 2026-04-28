@@ -32,6 +32,7 @@ function AuthScreen({ onLogin, onRegister, error, isBusy }) {
         <section className="rounded-[2rem] border border-white/60 bg-white/70 backdrop-blur-xl shadow-[0_24px_80px_rgba(15,23,42,0.10)] p-8 md:p-12 flex flex-col justify-between overflow-hidden relative">
           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(120deg,rgba(17,24,39,0.02),transparent_40%,rgba(101,67,33,0.04))]" />
           <div className="relative z-10 max-w-xl">
+            <p className="text-xs uppercase tracking-[0.34em] text-stone-500 font-semibold">AnyHabit</p>
             <div className="inline-flex items-center gap-3 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 shadow-sm">
               <LockKeyhole size={16} />
               Account Workspace
@@ -60,6 +61,13 @@ function AuthScreen({ onLogin, onRegister, error, isBusy }) {
         </section>
 
         <section className="rounded-[2rem] border border-stone-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.10)] p-6 md:p-8">
+          <div className="mb-5 flex items-center gap-3">
+            <img src="/AnyHabit.png" alt="AnyHabit" className="w-8 h-8 rounded-lg object-cover" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-stone-400">Welcome to</p>
+              <p className="text-lg font-semibold text-stone-900">AnyHabit</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2 rounded-full bg-stone-100 p-1 w-fit mb-6">
             <button
               type="button"
