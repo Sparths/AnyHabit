@@ -69,6 +69,11 @@ function TrackerHeader({
             >
               {selectedTracker.type}
             </span>
+            {selectedTracker.group_id && (
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700">
+                Shared {selectedTracker.participant_count ? `· ${selectedTracker.participant_count} members` : ''}
+              </span>
+            )}
             {!selectedTracker.is_active && (
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wider">
                 Stopped

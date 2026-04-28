@@ -1,11 +1,15 @@
-# React + Vite
+# AnyHabit Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend is a Vite + React application for the authenticated AnyHabit workspace. It now expects bearer-token auth from the backend, supports private and shared group trackers, and persists per-user dashboard layout state.
 
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## Local Development
+
+Set `VITE_API_URL` only if you want to point the frontend at a different backend origin. When running through Docker or the same host, the app uses the current origin and sends the stored bearer token automatically.
 
 ## React Compiler
 

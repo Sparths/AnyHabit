@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCcw,
   Settings,
+  Users,
   X
 } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
@@ -256,7 +257,7 @@ const getSelectedImpactTrackerIds = (widget, trackerMap, candidateIds) => {
   return config.selectedTrackerIds.filter((trackerId) => !!trackerMap[trackerId]);
 };
 
-function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal }) {
+function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal, setIsGroupManagementOpen }) {
   const {
     width: gridWidth,
     mounted: isGridMounted,
@@ -498,6 +499,15 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsGroupManagementOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-stone-700 hover:bg-stone-50 transition-colors"
+            >
+              <Users size={16} /> Groups
+              {groups.length > 0 && <span className="text-xs font-bold bg-stone-100 px-2 py-0.5 rounded-full">{groups.length}</span>}
+            </button>
+
             <button
               type="button"
               onClick={() => openTrackerModal()}

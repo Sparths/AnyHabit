@@ -14,7 +14,7 @@ const formatWindowLabel = (tracker) => {
   return interval === 1 ? `this ${label}` : `this ${interval} ${label}`;
 };
 
-function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats }) {
+function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats, shareStats }) {
   return (
     <div className="px-4 md:px-10 pb-10 flex flex-col">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -65,7 +65,7 @@ function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats
             <Flame size={16} />
             Streaks
           </div>
-          <div className="grid grid-cols-2 gap-4 mt-3">
+          <div className={`grid gap-4 mt-3 ${shareStats?.groupStreakStats ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <div className="rounded-2xl bg-stone-50 border border-gray-100 p-4">
               <div className="text-xs uppercase tracking-wider font-semibold text-gray-400">Current</div>
               <div className="text-3xl font-semibold text-stone-900 mt-1">{streakStats.current}</div>
@@ -76,6 +76,15 @@ function TrackerStats({ selectedTracker, dailyProgress, currentMath, streakStats
               <div className="text-3xl font-semibold text-stone-900 mt-1">{streakStats.longest}</div>
               <div className="text-xs text-gray-500 mt-1">{streakStats.periodLabel}</div>
             </div>
+            {shareStats?.groupStreakStats && (
+              <div className="rounded-2xl bg-stone-50 border border-gray-100 p-4">
+                <div className="text-xs uppercase tracking-wider font-semibold text-gray-400">Group</div>
+                <div className="text-3xl font-semibold text-stone-900 mt-1">
+                  {shareStats.groupStreakStats.current}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{shareStats.groupStreakStats.periodLabel}</div>
+              </div>
+            )}
           </div>
         </div>
 

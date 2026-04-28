@@ -1,10 +1,11 @@
-import { API_URL } from '../config/api';
-import { getApiToken } from '../config/api';
+import { API_URL, getApiToken } from '../config/api';
 
 async function requestJson(path, options) {
   const headers = {
+    'Content-Type': 'application/json',
     ...(options?.headers || {})
   };
+
   const token = getApiToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -25,18 +26,24 @@ async function requestJson(path, options) {
   return response.json();
 }
 
-export async function fetchHomeDashboardApi() {
-  return requestJson('/dashboard/home');
+export async function fetchGroupsApi() {
+  return requestJson('/groups/');
 }
 
-export async function fetchDashboardSummaryApi() {
-  return requestJson('/dashboard/summary');
-}
-
-export async function saveHomeDashboardApi(payload) {
-  return requestJson('/dashboard/home', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+export async function createGroupApi(payload) {
+  return requestJson('/groups/', {
+    method: 'POST',
     body: JSON.stringify(payload)
   });
+}
+
+export async function joinGroupApi(payload) {
+  return requestJson('/groups/join', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchGroupApi(groupId) {
+  return requestJson(`/groups/${groupId}`);
 }

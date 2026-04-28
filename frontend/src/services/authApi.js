@@ -1,10 +1,11 @@
-import { API_URL } from '../config/api';
-import { getApiToken } from '../config/api';
+import { API_URL, getApiToken } from '../config/api';
 
 async function requestJson(path, options) {
   const headers = {
+    'Content-Type': 'application/json',
     ...(options?.headers || {})
   };
+
   const token = getApiToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -25,18 +26,20 @@ async function requestJson(path, options) {
   return response.json();
 }
 
-export async function fetchHomeDashboardApi() {
-  return requestJson('/dashboard/home');
-}
-
-export async function fetchDashboardSummaryApi() {
-  return requestJson('/dashboard/summary');
-}
-
-export async function saveHomeDashboardApi(payload) {
-  return requestJson('/dashboard/home', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+export async function registerApi(payload) {
+  return requestJson('/auth/register', {
+    method: 'POST',
     body: JSON.stringify(payload)
   });
+}
+
+export async function loginApi(payload) {
+  return requestJson('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function fetchCurrentUserApi() {
+  return requestJson('/auth/me');
 }

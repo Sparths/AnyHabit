@@ -19,11 +19,13 @@ Create a file to handle all API communication:
 ```javascript
 // api.js
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const TOKEN = localStorage.getItem('anyhabit_access_token');
 
 async function request(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
       ...options.headers,
     },
     ...options,

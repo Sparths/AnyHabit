@@ -3,6 +3,95 @@ from datetime import datetime
 from typing import Any, Optional
 
 
+class UserBase(BaseModel):
+    username: str
+    email: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserLogin(BaseModel):
+    identifier: str
+    password: str
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: User
+
+
+class GroupBase(BaseModel):
+    name: str
+
+
+class GroupCreate(GroupBase):
+    pass
+
+
+class GroupJoin(BaseModel):
+    join_code: str
+
+
+class GroupMember(BaseModel):
+    user: User
+    role: str = "member"
+    joined_at: Optional[datetime] = None
+
+
+class Group(BaseModel):
+    id: int
+    name: str
+    join_code: str
+    owner_id: int
+    member_count: int = 0
+    members: list[GroupMember] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+class TrackerParticipant(BaseModel):
+    user: User
+    role: str = "participant"
+    added_at: Optional[datetime] = None
+
+
+class TrackerMemberProgress(BaseModel):
+    user: User
+    current_math: 'TrackerCurrentMath'
+    daily_progress: 'TrackerDailyProgress'
+    streak_stats: 'TrackerStreakStats'
+    last_activity_at: Optional[datetime] = None
+
+
+class TrackerLeaderboardEntry(BaseModel):
+    user: User
+    current_math: 'TrackerCurrentMath'
+    daily_progress: 'TrackerDailyProgress'
+    streak_stats: 'TrackerStreakStats'
+    last_activity_at: Optional[datetime] = None
+
+
+class GroupStreakStats(BaseModel):
+    current: int = 0
+    longest: int = 0
+    period_label: str = "days"
+    rule_label: str = "All assigned members"
+
+
 class TrackerBase(BaseModel):
     name: str
     category: str = "General"
@@ -15,14 +104,19 @@ class TrackerBase(BaseModel):
     units_per: str = "day"
     units_per_interval: int = Field(default=1, ge=1)
     is_active: bool = True
+    group_id: Optional[int] = None
+    participant_ids: list[int] = Field(default_factory=list)
 
 class TrackerCreate(TrackerBase):
     start_date: Optional[datetime] = None
 
 class Tracker(TrackerBase):
     id: int
+    owner_id: Optional[int] = None
     start_date: datetime
     current_streak_start_date: Optional[datetime] = None
+    visibility: str = "private"
+    participant_count: int = 0
 
     class Config:
         from_attributes = True
@@ -46,6 +140,13 @@ class TrackerStreakStats(BaseModel):
     period_label: str = "days"
 
 
+class TrackerShareStats(BaseModel):
+    member_count: int = 0
+    tracker_participants: list[TrackerParticipant] = Field(default_factory=list)
+    leaderboard: list[TrackerLeaderboardEntry] = Field(default_factory=list)
+    group_streak_stats: Optional[GroupStreakStats] = None
+
+
 class TrackerChartPoint(BaseModel):
     date: str
     label: str
@@ -65,11 +166,15 @@ class TrackerHeatmap(BaseModel):
 
 
 class TrackerAnalytics(BaseModel):
+    tracker_id: Optional[int] = None
     current_math: TrackerCurrentMath
     daily_progress: TrackerDailyProgress
     historical_chart_data: list[TrackerChartPoint]
     streak_stats: TrackerStreakStats
     build_heatmap: Optional[TrackerHeatmap] = None
+    member_progress: list[TrackerMemberProgress] = Field(default_factory=list)
+    share_stats: Optional[TrackerShareStats] = None
+    current_user_id: Optional[int] = None
 
 
 class JournalEntryBase(BaseModel):
@@ -82,6 +187,7 @@ class JournalEntryCreate(JournalEntryBase):
 class JournalEntry(JournalEntryBase):
     id: int
     tracker_id: int
+    user_id: Optional[int] = None
     timestamp: datetime
     is_relapse: bool = False
 
@@ -98,6 +204,7 @@ class HabitLogCreate(HabitLogBase):
 class HabitLog(HabitLogBase):
     id: int
     tracker_id: int
+    user_id: Optional[int] = None
     timestamp: datetime
 
     class Config:
@@ -109,6 +216,17 @@ class TrackerBundle(BaseModel):
     habit_logs: list[HabitLog]
     journal_entries: list[JournalEntry]
     analytics: TrackerAnalytics
+    group: Optional[Group] = None
+    share_stats: Optional[TrackerShareStats] = None
+
+
+class DashboardStatePayload(BaseModel):
+    widgets: list[dict[str, Any]] = Field(default_factory=list)
+    layouts: dict[str, Any] = Field(default_factory=dict)
+
+
+class DashboardStateResponse(DashboardStatePayload):
+    updated_at: Optional[datetime] = None
 
 
 class DashboardOverview(BaseModel):
@@ -116,7 +234,9 @@ class DashboardOverview(BaseModel):
     active: int = 0
     paused: int = 0
     categories: int = 0
+    groups: int = 0
     by_type: dict[str, int] = Field(default_factory=dict)
+    shared_trackers: int = 0
 
 
 class DashboardCategoryStat(BaseModel):
@@ -138,18 +258,10 @@ class DashboardSummary(BaseModel):
     impact_rows: list[DashboardImpactRow]
     top_impact_rows: list[DashboardImpactRow]
 
+
 class DailyStat(BaseModel):
     date: str
     total_amount: float
 
     class Config:
         from_attributes = True
-
-
-class DashboardStatePayload(BaseModel):
-    widgets: list[dict[str, Any]] = Field(default_factory=list)
-    layouts: dict[str, Any] = Field(default_factory=dict)
-
-
-class DashboardStateResponse(DashboardStatePayload):
-    updated_at: Optional[datetime] = None

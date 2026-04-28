@@ -71,6 +71,9 @@
 
 * **Dual Tracking Modes:** Monitor positive routines or reduce harmful ones.
 * **Categories:** Organize your dashboard with custom categories.
+* **Accounts & Groups:** Sign in with private accounts, then create family/friend groups for shared trackers.
+* **Shared Trackers:** Assign multiple group members to one tracker and compare progress per participant.
+* **Dual Streaks:** Track both individual streaks and a collective group streak for shared goals.
 * **Dark Mode:** Seamlessly switch between Light and Dark themes.
 * **Financial Impact:** Automatically calculate money saved by avoiding negative habits.
 * **Daily Journal:** Log your mood and thoughts alongside your habits.
@@ -105,7 +108,11 @@ Open **http://localhost** (or your device's IP) in your browser.
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `APP_PORT` | The port on which the app is accessible | `80` |
-| `VITE_API_URL` | Backend URL (internal routing) | `http://localhost/api` |
+| `VITE_API_URL` | Backend URL for local frontend development | `http://localhost/api` |
+| `ANYHABIT_SECRET_KEY` | Token signing secret for authentication | `change-me-in-production` |
+| `ANYHABIT_BOOTSTRAP_USERNAME` | Initial local login username | `owner` |
+| `ANYHABIT_BOOTSTRAP_EMAIL` | Initial local login email | `owner@anyhabit.local` |
+| `ANYHABIT_BOOTSTRAP_PASSWORD` | Initial local login password | `anyhabit` |
 
 **To change the port:**
 1. Create an environment file: `cp .env.example .env`
