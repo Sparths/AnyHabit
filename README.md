@@ -18,7 +18,7 @@
 > **Try it now:** [Explore the Live Demo Site](https://sparths.github.io/anyhabit-demo/)  
 > **Join the Community:** [AnyHabit Discord Server](https://discord.gg/ajknBq5zcH) — Get support, showcase your work, and chat with fellow devs!
 
-![AnyHabit Demo](assets/demo.gif)
+![AnyHabit Demo](assets/homepage.png)
 
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
