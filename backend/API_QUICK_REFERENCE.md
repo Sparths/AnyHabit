@@ -237,23 +237,6 @@ console.log(dashboard.top_impact_rows);   // Top 6 trackers
 
 ---
 
-## Testing
-
-```bash
-# Test server is running
-curl http://localhost:8000/
-
-# Use interactive docs
-http://localhost:8000/docs    # Swagger UI
-http://localhost:8000/redoc   # ReDoc
-
-# Run automated tests
-cd /workspaces/AnyHabit
-pytest backend/tests/ -v
-```
-
----
-
 ## Development Tips
 
 1. **Use bundle endpoint** when building tracker views (gets everything in one request)
@@ -283,7 +266,6 @@ pytest backend/tests/ -v
 ## See Also
 
 - **Full Documentation:** [README.md](./README.md)
-- **Testing Guide:** [../TESTING.md](../TESTING.md)
 - **Code Structure:** Files in this directory
 - **Models:** [models.py](./models.py)
 - **Schemas:** [schemas.py](./schemas.py)

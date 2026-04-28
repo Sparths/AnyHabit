@@ -511,16 +511,13 @@ const useCreateTracker = () => {
 - [ ] Set correct API URL for environment
 - [ ] Handle API errors gracefully
 - [ ] Add loading states
-- [ ] Test all endpoints
 - [ ] Implement authentication (if needed)
 - [ ] Add error boundaries
 - [ ] Cache data appropriately
-- [ ] Test error scenarios
 
 ## Resources
 
 - [Full API Documentation](./README.md)
 - [Quick Reference](./API_QUICK_REFERENCE.md)
-- [Testing Guide](../TESTING.md)
 - [Main Project README](../README.md)
 

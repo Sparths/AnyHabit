@@ -75,7 +75,6 @@ Backend development guide for contributors
 - How to add new endpoints
 - Data flow diagrams
 - Error handling
-- Testing guidelines
 - Performance considerations
 - Debugging tips
 - Deployment checklist
@@ -192,7 +191,6 @@ When building with this API:
 ### Production-Ready
 - ✅ Performance tips
 - ✅ Deployment checklist
-- ✅ Testing guidelines
 - ✅ Security considerations
 
 ---
@@ -209,7 +207,6 @@ When building with this API:
 
 ## 🔗 Related Resources
 
-- **Tests:** [../TESTING.md](../TESTING.md) - How to run tests
 - **Project README:** [../README.md](../README.md) - Project overview
 - **Contributing:** [../CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute
 - **Code:** Files in this directory
@@ -218,7 +215,6 @@ When building with this API:
   - `schemas.py` - Request/response types
   - `analytics.py` - Business logic
   - `routers/` - Endpoints
-  - `tests/` - Unit tests
 
 ---
 
@@ -232,13 +228,12 @@ When building with this API:
 ### For API Users
 1. Check [API_QUICK_REFERENCE.md](./API_QUICK_REFERENCE.md)
 2. Use [README.md](./README.md) for detailed info
-3. Use http://localhost:8000/docs for interactive testing
+3. Use http://localhost:8000/docs for interactive API docs
 
 ### For Backend Contributors
 1. Read [DEVELOPMENT.md](./DEVELOPMENT.md)
 2. Study the code structure
-3. Run tests: `pytest`
-4. Add features and tests
+3. Add features and update the docs
 
 ---
 
@@ -271,9 +266,8 @@ All documentation:
 **Advanced (contributing to API):**
 1. DEVELOPMENT.md (20 min)
 2. Browse routers/ directory
-3. Read tests in tests/ directory
-4. Read models.py and schemas.py
-5. Study analytics.py
+3. Read models.py and schemas.py
+4. Study analytics.py
 
 ---
 

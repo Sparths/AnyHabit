@@ -14,10 +14,6 @@ backend/
 │   ├── logs.py                 # /logs endpoints
 │   ├── journals.py             # /journal endpoints
 │   └── dashboard.py            # /dashboard endpoints
-├── tests/                       # Unit and integration tests
-│   ├── conftest.py             # Test fixtures
-│   ├── test_analytics.py       # Analytics tests
-│   └── test_endpoints.py       # Endpoint tests
 ├── analytics.py                # Business logic (calculations)
 ├── database.py                 # Database connection
 ├── deps.py                     # Dependency injection
@@ -250,19 +246,9 @@ from .routers import my_resource_router
 app.include_router(my_resource_router)
 ```
 
-### Step 6: Add Tests
+### Step 6: Update Documentation
 
-In `tests/test_endpoints.py`:
-
-```python
-def test_create_my_resource(client):
-    response = client.post("/my_resources/", json={
-        "name": "Test",
-        "value": 42
-    })
-    assert response.status_code == 200
-    assert response.json()["name"] == "Test"
-```
+Add the new endpoint details to the relevant README or quick reference so the API docs stay aligned with the code.
 
 ---
 
@@ -340,58 +326,6 @@ raise HTTPException(status_code=400, detail="Invalid data")
 
 # Server error
 raise HTTPException(status_code=500, detail="Internal server error")
-```
-
----
-
-## Testing
-
-### Run All Tests
-
-```bash
-pytest
-```
-
-### Run Specific Test
-
-```bash
-pytest backend/tests/test_analytics.py::TestDateUtilities::test_period_start_day -v
-```
-
-### With Coverage
-
-```bash
-pytest --cov=backend --cov-report=html
-```
-
-### Test Structure
-
-```python
-class TestTrackerAnalytics:
-    def test_build_tracker_analytics(self):
-        """Test description"""
-        tracker = SimpleNamespace(...)
-        logs = [...]
-        journals = [...]
-        
-        analytics = build_tracker_analytics(tracker, logs, journals)
-        
-        assert analytics.current_math is not None
-        assert analytics.daily_progress.percentage >= 0
-```
-
-### Fixtures Available
-
-```python
-# From conftest.py
-def test_something(client, db_session, sample_tracker, sample_logs):
-    """client: FastAPI TestClient
-       db_session: SQLAlchemy session
-       sample_tracker: Pre-made tracker
-       sample_logs: Pre-made logs
-    """
-    response = client.get(f"/trackers/{sample_tracker.id}/")
-    assert response.status_code == 200
 ```
 
 ---
@@ -500,8 +434,7 @@ To add a new tracker type (e.g., "hybrid"):
    if tracker.type == "hybrid":
        # Custom calculation
    ```
-3. Add tests in `test_analytics.py`
-4. Document in README
+3. Document in README
 
 ### Time Zone Support
 
@@ -553,20 +486,6 @@ sqlite> .tables
 sqlite> SELECT * FROM trackers;
 ```
 
-### API Testing
-
-```bash
-# Test endpoint
-curl -X POST http://localhost:8000/api/trackers/ \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test"}'
-
-# View docs
-http://localhost:8000/docs
-```
-
----
-
 ## Deployment
 
 ### Docker
@@ -589,7 +508,6 @@ docker run -p 8000:8000 anyhabit-backend
 - [ ] Database backups
 - [ ] Error monitoring (Sentry)
 - [ ] Performance monitoring
-- [ ] Load testing
 
 ---
 
@@ -598,7 +516,6 @@ docker run -p 8000:8000 anyhabit-backend
 - **FastAPI Docs:** https://fastapi.tiangolo.com/
 - **SQLAlchemy Docs:** https://docs.sqlalchemy.org/
 - **Pydantic Docs:** https://docs.pydantic.dev/
-- **Testing Guide:** [../TESTING.md](../TESTING.md)
 - **API Documentation:** [README.md](./README.md)
 
 ---
@@ -608,10 +525,8 @@ docker run -p 8000:8000 anyhabit-backend
 When contributing:
 
 1. Follow the existing code style
-2. Add tests for new features
-3. Run `pytest` to verify
-4. Update documentation
-5. Check with `pylint` or `black` (optional)
+2. Update documentation
+3. Check with `pylint` or `black` (optional)
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 

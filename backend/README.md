@@ -1121,7 +1121,6 @@ Choose the right type for your use case:
 
 - **Issues:** Report bugs on [GitHub Issues](https://github.com/Sparths/AnyHabit/issues)
 - **Community:** Join the [Discord Server](https://discord.gg/ajknBq5zcH)
-- **Testing:** Explore the [Testing Guide](../TESTING.md)
 - **Main README:** See [Project README](../README.md)
 
 ---
