@@ -1,4 +1,6 @@
-function SettingsModal({ isOpen, setIsSettingsOpen, theme, setTheme }) {
+import { LogOut } from 'lucide-react';
+
+function SettingsModal({ isOpen, setIsSettingsOpen, theme, setTheme, user, onLogout }) {
   if (!isOpen) return null;
 
   return (
@@ -16,6 +18,27 @@ function SettingsModal({ isOpen, setIsSettingsOpen, theme, setTheme }) {
             Close
           </button>
         </div>
+
+        {user && (
+          <div className="mb-7">
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Account</h4>
+            <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 mb-4">
+              <div className="text-xs uppercase tracking-[0.18em] text-stone-400 mb-1">Signed in as</div>
+              <div className="text-sm font-semibold text-stone-900 mb-1 truncate">{user.username}</div>
+              <div className="text-xs text-stone-500 mb-4 truncate">{user.email}</div>
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  setIsSettingsOpen(false);
+                }}
+                className="inline-flex items-center gap-2 text-sm font-medium text-stone-900 hover:text-rose-600 transition-colors"
+              >
+                <LogOut size={16} /> Log out
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-7">
           <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Theme</h4>

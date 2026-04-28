@@ -16,7 +16,9 @@ export const DEFAULT_TRACKER_FORM = {
   units_per_amount: 0.0,
   units_per: 'day',
   units_per_interval: 1,
-  is_active: true
+  is_active: true,
+  group_id: null,
+  participant_ids: []
 };
 
 export const DEFAULT_JOURNAL_FORM = { id: null, content: '', mood: 3 };

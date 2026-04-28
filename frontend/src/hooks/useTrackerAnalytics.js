@@ -9,11 +9,11 @@ const DEFAULT_ANALYTICS = {
   buildHeatmap: null
 };
 
-export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
+export function useTrackerAnalytics(selectedTracker, habitLogs, journals, isAuthenticated) {
   const [analytics, setAnalytics] = useState(DEFAULT_ANALYTICS);
 
   useEffect(() => {
-    if (!selectedTracker?.id) {
+    if (!isAuthenticated || !selectedTracker?.id) {
       setAnalytics(DEFAULT_ANALYTICS);
       return undefined;
     }
@@ -39,7 +39,7 @@ export function useTrackerAnalytics(selectedTracker, habitLogs, journals) {
     return () => {
       isCancelled = true;
     };
-  }, [selectedTracker?.id, habitLogs, journals]);
+  }, [isAuthenticated, selectedTracker?.id, habitLogs, journals]);
 
   return analytics;
 }

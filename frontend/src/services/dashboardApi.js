@@ -1,10 +1,34 @@
 import { API_URL } from '../config/api';
+import { getApiToken } from '../config/api';
 
 async function requestJson(path, options) {
-  const response = await fetch(`${API_URL}${path}`, options);
+  const headers = {
+    ...(options?.headers || {})
+  };
+  const token = getApiToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers
+  });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const message = await response.text();
+    let errorMessage = message || `Request failed: ${response.status}`;
+
+    try {
+      const parsed = JSON.parse(message);
+      errorMessage = parsed.detail || parsed.message || errorMessage;
+    } catch {
+      // keep plain-text response
+    }
+
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();

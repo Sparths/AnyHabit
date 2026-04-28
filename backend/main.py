@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import models
 from .database import engine
 from .migrations import run_startup_migrations
-from .routers import dashboard_router, journals_router, logs_router, trackers_router
+from .routers import auth_router, dashboard_router, groups_router, journals_router, logs_router, trackers_router
 
 models.Base.metadata.create_all(bind=engine)
 run_startup_migrations()
@@ -26,3 +26,5 @@ app.include_router(trackers_router)
 app.include_router(journals_router)
 app.include_router(logs_router)
 app.include_router(dashboard_router)
+app.include_router(auth_router)
+app.include_router(groups_router)

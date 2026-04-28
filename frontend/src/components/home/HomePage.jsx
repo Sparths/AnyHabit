@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCcw,
   Settings,
+  Users,
   X
 } from 'lucide-react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
@@ -256,7 +257,7 @@ const getSelectedImpactTrackerIds = (widget, trackerMap, candidateIds) => {
   return config.selectedTrackerIds.filter((trackerId) => !!trackerMap[trackerId]);
 };
 
-function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal }) {
+function HomePage({ trackers, groups, setIsSidebarOpen, onSelectTracker, onSelectCategory, openTrackerModal, setIsGroupManagementOpen }) {
   const {
     width: gridWidth,
     mounted: isGridMounted,
@@ -289,7 +290,7 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
   const impactCandidates = useMemo(
     () =>
       trackers
-        .filter((tracker) => tracker.type !== 'boolean' && toSafeNumber(tracker.impact_amount) > 0)
+        .filter((tracker) => tracker.type !== 'boolean')
         .sort((a, b) => a.name.localeCompare(b.name)),
     [trackers]
   );
@@ -500,6 +501,15 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setIsGroupManagementOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-stone-700 hover:bg-stone-50 transition-colors"
+            >
+              <Users size={16} /> Groups
+              {groups.length > 0 && <span className="text-xs font-bold bg-stone-100 px-2 py-0.5 rounded-full">{groups.length}</span>}
+            </button>
+
+            <button
+              type="button"
               onClick={() => openTrackerModal()}
               className="px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-stone-700 hover:bg-stone-50 transition-colors"
             >
@@ -593,7 +603,7 @@ function HomePage({ trackers, setIsSidebarOpen, onSelectTracker, onSelectCategor
                   : [];
                 const impactSourceLabel = isImpactWidget
                   ? impactConfig?.autoSelect
-                    ? `Source: all impact-enabled trackers (${selectedTrackerIds.length})`
+                    ? `Source: all eligible trackers (${selectedTrackerIds.length})`
                     : `Source: ${selectedTrackerIds.length} selected tracker${selectedTrackerIds.length === 1 ? '' : 's'}`
                   : '';
 
@@ -890,7 +900,7 @@ function ImpactTrackerSourceSettings({ widget, trackerMap, impactCandidates, onC
 
       <p className="text-xs text-gray-500">
         {config.autoSelect
-          ? `Using all impact-enabled trackers (${impactCandidates.length}).`
+          ? `Using all eligible trackers (${impactCandidates.length}).`
           : `Using ${selectedTrackerIds.length} selected tracker${selectedTrackerIds.length === 1 ? '' : 's'}.`}
       </p>
 
@@ -925,7 +935,7 @@ function ImpactTrackerSourceSettings({ widget, trackerMap, impactCandidates, onC
 
           {impactCandidates.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs text-gray-500">
-              No impact-enabled trackers available.
+              No eligible trackers available.
             </div>
           ) : filteredCandidates.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-white p-3 text-xs text-gray-500">

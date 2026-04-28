@@ -45,7 +45,9 @@ Complete API documentation
 - Getting started
 - Authentication
 - Data types
-- **25+ endpoints** documented:
+- **30+ endpoints** documented:
+  - Auth (3 endpoints)
+  - Groups (4 endpoints)
   - Trackers (8 endpoints)
   - Logs (3 endpoints)
   - Journals (4 endpoints)
@@ -102,9 +104,11 @@ Backend development guide for contributors
 
 ### Features
 ✅ Key features explained:
+- Authentication and bearer-token workflow
+- User and group membership model
 - Tracker types (build, quit, boolean)
+- Shared tracker participation and dual streaks
 - Analytics calculations
-- Streak tracking
 - Heatmaps
 - Dashboard aggregation
 - Period calculations

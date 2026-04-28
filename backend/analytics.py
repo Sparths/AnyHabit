@@ -284,6 +284,164 @@ def _calculate_streak_stats(
     )
 
 
+def _get_completion_threshold(tracker: models.Tracker) -> float:
+    if tracker.type == "quit":
+        return 0.0
+    if tracker.type == "boolean":
+        return 1.0
+    return max(0.0, float(tracker.units_per_amount or 0))
+
+
+def _build_completion_history(
+    tracker: models.Tracker,
+    habit_logs: list[models.HabitLog],
+    journal_entries: list[models.JournalEntry],
+) -> list[bool]:
+    if tracker.start_date is None:
+        return []
+
+    if tracker.type == "quit":
+        today = period_start(datetime.utcnow(), "day")
+        tracker_start_day = period_start(tracker.start_date, "day")
+        relapse_days = {
+            period_start(entry.timestamp, "day")
+            for entry in journal_entries
+            if entry.is_relapse
+        }
+
+        history: list[bool] = []
+        cursor = tracker_start_day
+        while cursor <= today:
+            history.append(cursor not in relapse_days)
+            cursor = add_period(cursor, "day")
+        return history
+
+    streak_period = tracker.units_per
+    interval_count = get_interval_count(tracker)
+    tracker_start = period_start(tracker.start_date, streak_period)
+    current_window = int(get_window_details(datetime.utcnow(), tracker_start, streak_period, interval_count)["window_index"])
+    threshold = _get_completion_threshold(tracker)
+
+    totals_by_window: dict[int, float] = {}
+    for log in habit_logs:
+        window = get_window_details(log.timestamp, tracker_start, streak_period, interval_count)
+        window_index = int(window["window_index"])
+        if window_index < 0:
+            continue
+        totals_by_window[window_index] = totals_by_window.get(window_index, 0.0) + float(log.amount or 0)
+
+    return [totals_by_window.get(index, 0.0) >= threshold for index in range(current_window + 1)]
+
+
+def _build_member_progress(
+    tracker: models.Tracker,
+    user: models.User,
+    habit_logs: list[models.HabitLog],
+    journal_entries: list[models.JournalEntry],
+) -> schemas.TrackerMemberProgress:
+    latest_activity = max(
+        [*[log.timestamp for log in habit_logs], *[entry.timestamp for entry in journal_entries]],
+        default=None,
+    )
+
+    return schemas.TrackerMemberProgress(
+        user=schemas.User.model_validate(user),
+        current_math=_calculate_current_math(tracker, habit_logs),
+        daily_progress=_calculate_daily_progress(tracker, habit_logs),
+        streak_stats=_calculate_streak_stats(tracker, habit_logs, journal_entries),
+        last_activity_at=latest_activity,
+    )
+
+
+def _calculate_group_streak_stats(
+    tracker: models.Tracker,
+    member_logs: dict[int, list[models.HabitLog]],
+    member_journals: dict[int, list[models.JournalEntry]],
+) -> schemas.GroupStreakStats | None:
+    if tracker.group_id is None or tracker.start_date is None:
+        return None
+
+    histories: list[list[bool]] = []
+    for user_id in sorted(member_logs.keys() | member_journals.keys()):
+        histories.append(
+            _build_completion_history(
+                tracker,
+                member_logs.get(user_id, []),
+                member_journals.get(user_id, []),
+            )
+        )
+
+    if not histories:
+        return schemas.GroupStreakStats(current=0, longest=0, period_label=get_period_label(tracker.units_per if tracker.type != "quit" else "day", get_interval_count(tracker)))
+
+    max_length = max(len(history) for history in histories)
+    group_history: list[bool] = []
+    for index in range(max_length):
+        period_done = all(history[index] if index < len(history) else False for history in histories)
+        group_history.append(period_done)
+
+    current = 0
+    longest = 0
+    run = 0
+    for period_done in group_history:
+        if period_done:
+            run += 1
+            longest = max(longest, run)
+        else:
+            run = 0
+
+    for period_done in reversed(group_history):
+        if not period_done:
+            break
+        current += 1
+
+    period_label = "days" if tracker.type == "quit" else get_period_label(tracker.units_per, get_interval_count(tracker))
+    return schemas.GroupStreakStats(current=current, longest=longest, period_label=period_label)
+
+
+def build_tracker_share_stats(
+    tracker: models.Tracker,
+    participants: list[models.User],
+    member_logs: dict[int, list[models.HabitLog]],
+    member_journals: dict[int, list[models.JournalEntry]],
+) -> schemas.TrackerShareStats:
+    leaderboard: list[schemas.TrackerLeaderboardEntry] = []
+
+    for user in participants:
+        logs = member_logs.get(user.id, [])
+        journals = member_journals.get(user.id, [])
+        leaderboard.append(
+            schemas.TrackerLeaderboardEntry(
+                user=schemas.User.model_validate(user),
+                current_math=_calculate_current_math(tracker, logs),
+                daily_progress=_calculate_daily_progress(tracker, logs),
+                streak_stats=_calculate_streak_stats(tracker, logs, journals),
+                last_activity_at=max(
+                    [*[log.timestamp for log in logs], *[entry.timestamp for entry in journals]],
+                    default=None,
+                ),
+            )
+        )
+
+    leaderboard.sort(
+        key=lambda entry: (
+            -entry.streak_stats.current,
+            -entry.daily_progress.percentage,
+            -(entry.last_activity_at.timestamp() if entry.last_activity_at else 0.0),
+            entry.user.username.lower(),
+        )
+    )
+
+    return schemas.TrackerShareStats(
+        member_count=len(participants),
+        tracker_participants=[
+            schemas.TrackerParticipant(user=entry.user, role="participant", added_at=None) for entry in leaderboard
+        ],
+        leaderboard=leaderboard,
+        group_streak_stats=_calculate_group_streak_stats(tracker, member_logs, member_journals),
+    )
+
+
 def _build_historical_chart_data(
     tracker: models.Tracker,
     habit_logs: list[models.HabitLog],
@@ -381,13 +539,37 @@ def build_tracker_analytics(
     tracker: models.Tracker,
     habit_logs: list[models.HabitLog],
     journal_entries: list[models.JournalEntry],
+    current_user_id: int | None = None,
+    participants: list[models.User] | None = None,
+    member_logs: dict[int, list[models.HabitLog]] | None = None,
+    member_journals: dict[int, list[models.JournalEntry]] | None = None,
 ) -> schemas.TrackerAnalytics:
+    active_logs = habit_logs
+    active_journals = journal_entries
+
+    if current_user_id is not None and member_logs is not None and member_journals is not None:
+        active_logs = member_logs.get(current_user_id, [])
+        active_journals = member_journals.get(current_user_id, [])
+
+    share_stats = None
+    member_progress: list[schemas.TrackerMemberProgress] = []
+    if tracker.group_id is not None and participants is not None and member_logs is not None and member_journals is not None:
+        share_stats = build_tracker_share_stats(tracker, participants, member_logs, member_journals)
+        member_progress = [
+            _build_member_progress(tracker, participant, member_logs.get(participant.id, []), member_journals.get(participant.id, []))
+            for participant in participants
+        ]
+
     return schemas.TrackerAnalytics(
-        current_math=_calculate_current_math(tracker, habit_logs),
-        daily_progress=_calculate_daily_progress(tracker, habit_logs),
-        historical_chart_data=_build_historical_chart_data(tracker, habit_logs, journal_entries),
-        streak_stats=_calculate_streak_stats(tracker, habit_logs, journal_entries),
-        build_heatmap=_build_heatmap(tracker, habit_logs),
+        tracker_id=tracker.id,
+        current_math=_calculate_current_math(tracker, active_logs),
+        daily_progress=_calculate_daily_progress(tracker, active_logs),
+        historical_chart_data=_build_historical_chart_data(tracker, active_logs, active_journals),
+        streak_stats=_calculate_streak_stats(tracker, active_logs, active_journals),
+        build_heatmap=_build_heatmap(tracker, active_logs),
+        member_progress=member_progress,
+        share_stats=share_stats,
+        current_user_id=current_user_id,
     )
 
 
@@ -415,11 +597,14 @@ def build_dashboard_summary(
     impact_rows: list[schemas.DashboardImpactRow] = []
     category_counts: dict[str, int] = {}
     by_type: dict[str, int] = {"quit": 0, "build": 0, "boolean": 0}
+    group_ids: set[int] = set()
 
     for tracker in trackers:
         category = tracker.category.strip() if isinstance(tracker.category, str) and tracker.category.strip() else "General"
         category_counts[category] = category_counts.get(category, 0) + 1
         by_type[tracker.type] = by_type.get(tracker.type, 0) + 1
+        if tracker.group_id is not None:
+            group_ids.add(tracker.group_id)
 
         tracker_logs = logs_by_tracker_id.get(tracker.id, [])
         tracker_journals = journals_by_tracker_id.get(tracker.id, [])
@@ -464,7 +649,9 @@ def build_dashboard_summary(
             active=active,
             paused=max(0, total - active),
             categories=len(category_counts),
+            groups=len(group_ids),
             by_type=by_type,
+            shared_trackers=sum(1 for tracker in trackers if tracker.group_id is not None),
         ),
         category_breakdown=category_breakdown,
         impact_rows=impact_rows,

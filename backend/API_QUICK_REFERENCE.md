@@ -19,6 +19,46 @@ http://localhost:8000/redoc # ReDoc documentation
 
 ## Essential Endpoints
 
+### Authentication
+
+```bash
+# Register
+POST /auth/register
+{
+  "username": "sam",
+  "email": "sam@example.com",
+  "password": "secret123"
+}
+
+# Login
+POST /auth/login
+{
+  "identifier": "sam@example.com",
+  "password": "secret123"
+}
+
+# Current user
+GET /auth/me
+```
+
+### Groups
+
+```bash
+# Create group
+POST /groups/
+{"name": "Family"}
+
+# Join group
+POST /groups/join
+{"join_code": "AB12CD34"}
+
+# List groups
+GET /groups/
+```
+
+All tracker, log, journal, and dashboard routes require `Authorization: Bearer <token>`.
+
+
 ### Trackers
 
 ```bash
@@ -30,7 +70,9 @@ POST /trackers/
   "unit": "pages",
   "units_per_amount": 2,
   "units_per": "day",
-  "impact_amount": 5
+  "impact_amount": 5,
+  "group_id": 3,
+  "participant_ids": [2, 4]
 }
 
 # Get all

@@ -4,6 +4,7 @@ import {
   DEFAULT_LOG_FORM,
   DEFAULT_TRACKER_FORM
 } from '../constants/tracker';
+import { createGroupApi, fetchGroupsApi, joinGroupApi } from '../services/groupApi';
 import {
   createBooleanLogApi,
   createLogApi,
@@ -19,8 +20,9 @@ import {
   toggleTrackerStatusApi
 } from '../services/trackerApi';
 
-export function useTrackerData() {
+export function useTrackerData(isAuthenticated, currentUserId) {
   const [trackers, setTrackers] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [selectedTrackerId, setSelectedTrackerId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -46,10 +48,30 @@ export function useTrackerData() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const data = await fetchGroupsApi();
+      setGroups(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const createGroup = async (name) => {
+    await createGroupApi({ name });
+    await fetchGroups();
+  };
+
+  const joinGroup = async (joinCode) => {
+    await joinGroupApi({ join_code: joinCode });
+    await fetchGroups();
+    await fetchTrackers();
+  };
+
   const fetchJournals = async (trackerId) => {
     try {
       const data = await fetchJournalsApi(trackerId);
-      setJournals(data);
+      setJournals(currentUserId ? data.filter((journal) => journal.user_id === currentUserId) : data);
     } catch (error) {
       console.error(error);
     }
@@ -58,17 +80,31 @@ export function useTrackerData() {
   const fetchHabitLogs = async (trackerId) => {
     try {
       const data = await fetchHabitLogsApi(trackerId);
-      setHabitLogs(data);
+      setHabitLogs(currentUserId ? data.filter((log) => log.user_id === currentUserId) : data);
     } catch (error) {
       console.error(error);
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setTrackers([]);
+      setGroups([]);
+      setSelectedTrackerId(null);
+      setSelectedCategory(null);
+      setJournals([]);
+      setHabitLogs([]);
+      setJournalFormData(DEFAULT_JOURNAL_FORM);
+      setLogFormData(DEFAULT_LOG_FORM);
+      setTrackerFormData(DEFAULT_TRACKER_FORM);
+      return;
+    }
     fetchTrackers();
-  }, []);
+    fetchGroups();
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (selectedTrackerId) {
       fetchJournals(selectedTrackerId);
       fetchHabitLogs(selectedTrackerId);
@@ -77,7 +113,7 @@ export function useTrackerData() {
       setJournals([]);
       setHabitLogs([]);
     }
-  }, [selectedTrackerId]);
+  }, [isAuthenticated, selectedTrackerId]);
 
   const selectedTracker = useMemo(
     () => trackers.find((tracker) => tracker.id === selectedTrackerId),
@@ -133,7 +169,9 @@ export function useTrackerData() {
       setTrackerFormData({
         ...tracker,
         category: normalizedCategory,
-        units_per_interval: Math.max(1, Number(tracker.units_per_interval || 1))
+        units_per_interval: Math.max(1, Number(tracker.units_per_interval || 1)),
+        group_id: tracker.group_id || null,
+        participant_ids: tracker.participant_ids || []
       });
       return;
     }
@@ -198,6 +236,7 @@ export function useTrackerData() {
 
   return {
     trackers,
+    groups,
     selectedTrackerId,
     setSelectedTrackerId,
     selectedCategory,
@@ -218,6 +257,9 @@ export function useTrackerData() {
     selectedCategoryTrackers,
     activeCategory,
     fetchHabitLogs,
+    fetchGroups,
+    createGroup,
+    joinGroup,
     openTrackerModalData,
     submitTracker,
     deleteTracker,

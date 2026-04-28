@@ -1,15 +1,18 @@
 import TrackerHeader from './tracker/TrackerHeader';
 import TrackerStats from './tracker/TrackerStats';
 import TrackerCharts from './tracker/TrackerCharts';
+import TrackerLeaderboard from './tracker/TrackerLeaderboard';
 import JournalSection from './tracker/JournalSection';
 
 function TrackerView({
   selectedTracker,
+  canManageTracker,
   dailyProgress,
   currentMath,
   streakStats,
   historicalChartData,
   buildHeatmap,
+  shareStats,
   habitLogs,
   deleteLog,
   setIsSidebarOpen,
@@ -31,6 +34,7 @@ function TrackerView({
     <div className="flex-1 overflow-y-auto">
       <TrackerHeader
         selectedTracker={selectedTracker}
+        canManageTracker={canManageTracker}
         dailyProgress={dailyProgress}
         setIsSidebarOpen={setIsSidebarOpen}
         setSelectedCategory={setSelectedCategory}
@@ -48,6 +52,7 @@ function TrackerView({
         dailyProgress={dailyProgress}
         currentMath={currentMath}
         streakStats={streakStats}
+        shareStats={shareStats}
       />
 
       <div className="px-4 md:px-10 pb-10 flex flex-col">
@@ -58,6 +63,8 @@ function TrackerView({
           habitLogs={habitLogs}
           deleteLog={deleteLog}
         />
+
+        <TrackerLeaderboard shareStats={shareStats} />
 
         <JournalSection
           journalFormData={journalFormData}

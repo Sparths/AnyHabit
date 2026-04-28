@@ -7,8 +7,11 @@ Welcome to the AnyHabit API! This document provides comprehensive information ab
 - [Getting Started](#getting-started)
 - [Base URL](#base-url)
 - [Authentication](#authentication)
+- [Authentication](#authentication)
 - [Data Types](#data-types)
 - [Endpoints](#endpoints)
+  - [Auth](#auth)
+  - [Groups](#groups)
   - [Trackers](#trackers)
   - [Logs](#logs)
   - [Journals](#journals)
@@ -56,17 +59,50 @@ All endpoints are prefixed with `/api`. Replace `localhost:8000` with your serve
 
 ## Authentication
 
-**Current Status:** No authentication required (CORS enabled for all origins)
+AnyHabit now uses bearer-token authentication for all workspace data routes. Register or log in through `/auth`, then send the returned `access_token` as `Authorization: Bearer <token>` on every protected request.
 
-All endpoints are publicly accessible. When deploying to production, implement:
-- API keys
-- JWT tokens
-- OAuth2
-- IP whitelisting
+The backend seeds a local bootstrap account on first run using these environment variables:
+- `ANYHABIT_BOOTSTRAP_USERNAME`
+- `ANYHABIT_BOOTSTRAP_EMAIL`
+- `ANYHABIT_BOOTSTRAP_PASSWORD`
+- `ANYHABIT_SECRET_KEY`
 
 ---
 
 ## Data Types
+
+
+### Auth
+
+#### Register
+
+`POST /auth/register`
+
+```json
+{
+  "username": "sam",
+  "email": "sam@example.com",
+  "password": "secret123"
+}
+```
+
+#### Login
+
+`POST /auth/login`
+
+```json
+{
+  "identifier": "sam@example.com",
+  "password": "secret123"
+}
+```
+
+### Groups
+
+- `POST /groups/` creates a group and adds the owner automatically.
+- `POST /groups/join` joins a group using its join code.
+- `GET /groups/` lists all groups the current user belongs to.
+- `GET /groups/{group_id}` returns members and the join code.
 
 ### Tracker Types
 
@@ -106,7 +142,7 @@ Manage habit trackers.
 
 **Endpoint:** `POST /trackers/`
 
-**Description:** Create a new tracker
+**Description:** Create a new tracker. If `group_id` is set, the tracker becomes shared and `participant_ids` selects the members assigned to it.
 
 **Request Body:**
 
@@ -123,7 +159,9 @@ Manage habit trackers.
   "impact_per": "day",
   "impact_unit": "$",
   "start_date": "2024-03-01T00:00:00",
-  "is_active": true
+  "is_active": true,
+  "group_id": 3,
+  "participant_ids": [2, 4]
 }
 ```
 
@@ -164,6 +202,8 @@ Manage habit trackers.
 | impact_unit | string | No | "$" | Unit of impact (optional badge) |
 | start_date | datetime | No | Now | Tracker start date |
 | is_active | bool | No | true | Whether tracker is active |
+| group_id | int | No | null | Group to share the tracker with |
+| participant_ids | array[int] | No | [] | Assigned members inside the group |
 
 ---
 

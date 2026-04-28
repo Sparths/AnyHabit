@@ -1,9 +1,34 @@
 import { API_URL } from '../config/api';
+import { getApiToken } from '../config/api';
 
 async function requestJson(path, options) {
-  const response = await fetch(`${API_URL}${path}`, options);
+  const headers = {
+    ...(options?.headers || {})
+  };
+  const token = getApiToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers
+  });
+
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const message = await response.text();
+    let errorMessage = message || `Request failed: ${response.status}`;
+
+    try {
+      const parsed = JSON.parse(message);
+      errorMessage = parsed.detail || parsed.message || errorMessage;
+    } catch {
+      // keep plain-text response
+    }
+
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -49,6 +74,58 @@ function normalizeTrackerAnalytics(data) {
       longest: Number(data?.streak_stats?.longest ?? 0),
       periodLabel: data?.streak_stats?.period_label ?? 'days'
     },
+    memberProgress: (data?.member_progress ?? []).map((entry) => ({
+      user: entry.user,
+      currentMath: {
+        mainUnit: formatValue(entry?.current_math?.main_unit, 1),
+        targetUnit: formatValue(entry?.current_math?.target_unit, 1),
+        impactValue: formatValue(entry?.current_math?.impact_value, 2)
+      },
+      dailyProgress: {
+        total: Number(entry?.daily_progress?.total ?? 0),
+        target: Number(entry?.daily_progress?.target ?? 0),
+        percentage: Number(entry?.daily_progress?.percentage ?? 0)
+      },
+      streakStats: {
+        current: Number(entry?.streak_stats?.current ?? 0),
+        longest: Number(entry?.streak_stats?.longest ?? 0),
+        periodLabel: entry?.streak_stats?.period_label ?? 'days'
+      },
+      lastActivityAt: entry?.last_activity_at || null
+    })),
+    shareStats: data?.share_stats
+      ? {
+          memberCount: Number(data.share_stats.member_count ?? 0),
+          trackerParticipants: (data.share_stats.tracker_participants ?? []).map((participant) => participant),
+          leaderboard: (data.share_stats.leaderboard ?? []).map((entry) => ({
+            user: entry.user,
+            currentMath: {
+              mainUnit: formatValue(entry?.current_math?.main_unit, 1),
+              targetUnit: formatValue(entry?.current_math?.target_unit, 1),
+              impactValue: formatValue(entry?.current_math?.impact_value, 2)
+            },
+            dailyProgress: {
+              total: Number(entry?.daily_progress?.total ?? 0),
+              target: Number(entry?.daily_progress?.target ?? 0),
+              percentage: Number(entry?.daily_progress?.percentage ?? 0)
+            },
+            streakStats: {
+              current: Number(entry?.streak_stats?.current ?? 0),
+              longest: Number(entry?.streak_stats?.longest ?? 0),
+              periodLabel: entry?.streak_stats?.period_label ?? 'days'
+            },
+            lastActivityAt: entry?.last_activity_at || null
+          })),
+          groupStreakStats: data.share_stats.group_streak_stats
+            ? {
+                current: Number(data.share_stats.group_streak_stats.current ?? 0),
+                longest: Number(data.share_stats.group_streak_stats.longest ?? 0),
+                periodLabel: data.share_stats.group_streak_stats.period_label ?? 'days',
+                ruleLabel: data.share_stats.group_streak_stats.rule_label ?? 'All assigned members'
+              }
+            : null
+        }
+      : null,
     buildHeatmap: data?.build_heatmap
       ? {
           maxAmount: Number(data.build_heatmap.max_amount ?? 0),
@@ -88,7 +165,11 @@ export async function saveTrackerApi(trackerFormData) {
     units_per_amount: isBoolean ? 1.0 : parseFloat(trackerFormData.units_per_amount) || 0.0,
     units_per: trackerFormData.units_per,
     units_per_interval: unitsPerInterval,
-    is_active: trackerFormData.is_active
+    is_active: trackerFormData.is_active,
+    group_id: trackerFormData.group_id ? Number(trackerFormData.group_id) : null,
+    participant_ids: Array.isArray(trackerFormData.participant_ids)
+      ? trackerFormData.participant_ids.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
+      : []
   };
 
   return requestJson(url, {

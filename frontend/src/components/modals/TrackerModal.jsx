@@ -1,8 +1,10 @@
 import { ChevronDown } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 function TrackerModal({
   isOpen,
   setIsTrackerModalOpen,
+  currentUser,
   trackerFormData,
   setTrackerFormData,
   handleTrackerSubmit,
@@ -15,12 +17,29 @@ function TrackerModal({
   existingCategories,
   isTypeMenuOpen,
   setIsTypeMenuOpen,
-  trackerTypeOptions
+  trackerTypeOptions,
+  groups
 }) {
+  const [isGroupMenuOpen, setIsGroupMenuOpen] = useState(false);
+  const groupMenuRef = useRef(null);
+
   if (!isOpen) return null;
 
   const selectedTypeLabel =
     trackerTypeOptions.find((typeOption) => typeOption.value === trackerFormData.type)?.label || 'Quit';
+  const ownerGroupOptions = groups.filter((group) => group.owner_id === currentUser?.id);
+  const selectedGroup = groups.find((group) => group.id === Number(trackerFormData.group_id)) || null;
+  const selectedGroupName = selectedGroup?.name || 'Private tracker';
+
+  const toggleParticipant = (userId) => {
+    const numericUserId = Number(userId);
+    const existingIds = Array.isArray(trackerFormData.participant_ids) ? trackerFormData.participant_ids : [];
+    const nextIds = existingIds.includes(numericUserId)
+      ? existingIds.filter((id) => id !== numericUserId)
+      : [...existingIds, numericUserId];
+
+    setTrackerFormData({ ...trackerFormData, participant_ids: nextIds });
+  };
 
   return (
     <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -109,6 +128,103 @@ function TrackerModal({
               )}
             </div>
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Group</label>
+            <div className="space-y-2" ref={groupMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsGroupMenuOpen((prev) => !prev)}
+                className="w-full border border-gray-200 rounded-xl p-2.5 outline-none focus:border-stone-400 bg-stone-50 text-sm flex items-center justify-between text-stone-800"
+              >
+                <span className="truncate text-left">{selectedGroupName}</span>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-400 transition-transform ${isGroupMenuOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {isGroupMenuOpen && (
+                <div className="w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                  <ul className="max-h-48 overflow-y-auto py-1">
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTrackerFormData({
+                            ...trackerFormData,
+                            group_id: null,
+                            participant_ids: []
+                          });
+                          setIsGroupMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                          !trackerFormData.group_id
+                            ? 'bg-stone-100 text-stone-900'
+                            : 'text-stone-700 hover:bg-stone-50'
+                        }`}
+                      >
+                        Private tracker
+                      </button>
+                    </li>
+                    {ownerGroupOptions.map((group) => (
+                      <li key={group.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTrackerFormData({
+                              ...trackerFormData,
+                              group_id: group.id,
+                              participant_ids: []
+                            });
+                            setIsGroupMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                            trackerFormData.group_id === group.id
+                              ? 'bg-stone-100 text-stone-900'
+                              : 'text-stone-700 hover:bg-stone-50'
+                          }`}
+                        >
+                          {group.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <p className="text-[11px] text-stone-400">
+              Shared trackers can only be created in groups you own.
+            </p>
+          </div>
+
+          {selectedGroup && (
+            <div className="p-4 rounded-2xl border border-gray-100 bg-white">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Members</label>
+                <span className="text-[11px] text-stone-400">Owner is always included</span>
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {selectedGroup.members.map((membership) => (
+                  <label
+                    key={membership.user.id}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 px-3 py-2 text-sm text-stone-700"
+                  >
+                    <span className="min-w-0 truncate">
+                      {membership.user.username}
+                      <span className="ml-2 text-xs text-stone-400">{membership.role}</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={trackerFormData.participant_ids.includes(membership.user.id)}
+                      onChange={() => toggleParticipant(membership.user.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-stone-900 focus:ring-stone-500"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
