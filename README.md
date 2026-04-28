@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v0.10.0] - Latest Release
+#### [v1.0.0] - Latest Release
+- **Added:** Multi User Support
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.10.0...v1.0.0)
+
+#### [v0.10.0] - Stand Alone API
 - **Added:** Stand Alone API
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.9.0...v0.10.0)
 
@@ -42,23 +46,6 @@
 #### [v0.6.3] - Date Selection
 - **Added:** Date Selection for "Build" Trackers Logs
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.2...v0.6.3)
-
-#### [v0.6.2] - Historical Progress
-- **Added:** Historical Progress/Heatmap
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.1...v0.6.2)
-
-#### [v0.6.1] - Mobile Support
-- **Added:** Better Mobile Layout
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.0...v0.6.1)
-
-#### [v0.6.0] - Relapse Feature
-- **Added:** Add Relapse Feature that resets your Tracker without having to delete the whole tracker and loosing all Journal Entries
-- **Fix:** Changed that Impact Units go up based on actual units logged.
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.5.0...v0.6.0)
-  
-#### [v0.5.0] - Custom Impact Units
-- **Added:** Support custom impact units!
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.4.0...v0.5.0)
 </details>
 
 ---
