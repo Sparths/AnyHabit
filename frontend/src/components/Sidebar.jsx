@@ -1,4 +1,4 @@
-import { Plus, Settings, ChevronDown, Home, X } from 'lucide-react';
+import { Plus, Settings, ChevronDown, Home, X, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppState } from '../state/AppStateContext';
@@ -17,6 +17,7 @@ function Sidebar({ isHomeActive }) {
     selectedTrackerId,
     openTrackerModal,
     setIsSettingsOpen,
+    setIsExportOpen,
     setSelectedCategory,
     setSelectedTrackerId
   } = useAppState();
@@ -69,16 +70,6 @@ function Sidebar({ isHomeActive }) {
           <h1 className="text-xl font-bold tracking-tight">AnyHabit</h1>
         </button>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSettingsOpen(true);
-              setIsSidebarOpen(false);
-            }}
-            className="p-2 text-gray-400 hover:text-stone-900 transition-colors rounded-lg hover:bg-stone-50"
-          >
-            <Settings size={18} />
-          </button>
           <button className="md:hidden text-gray-400 hover:text-stone-900" onClick={() => setIsSidebarOpen(false)}>
             <X size={20} />
           </button>
@@ -199,8 +190,19 @@ function Sidebar({ isHomeActive }) {
       </ul>
 
       <button
+        onClick={() => {
+          setIsExportOpen(true);
+          setIsSidebarOpen(false);
+        }}
+        className="mb-1 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-stone-800 transition-colors"
+      >
+        <Download size={16} />
+        <span>Export Data</span>
+      </button>
+
+      <button
         onClick={() => setIsSettingsOpen(true)}
-        className="mt-5 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-stone-800 transition-colors"
+        className="mt-1 w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-stone-800 transition-colors"
       >
         <Settings size={16} />
         <span>Settings</span>

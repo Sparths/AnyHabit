@@ -24,6 +24,7 @@ export function AppStateProvider({ children }) {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [isGroupManagementOpen, setIsGroupManagementOpen] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
@@ -235,6 +236,8 @@ export function AppStateProvider({ children }) {
       setIsSidebarOpen,
       isSettingsOpen,
       setIsSettingsOpen,
+      isExportOpen,
+      setIsExportOpen,
       isGroupManagementOpen,
       setIsGroupManagementOpen,
       collapsedCategories,
