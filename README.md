@@ -23,7 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [v1.0.0] - Latest Release
+#### [v1.1.0] - Latest Release
+- **Added:** Data Export
+- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v1.0.0...v1.1.0)
+
+#### [v1.0.0] - Multi User
 - **Added:** Multi User Support
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.10.0...v1.0.0)
 
@@ -42,10 +46,6 @@
 #### [v0.7.0] - Refactor App Structure
 - **Added:** Refactor app structure, Fix Bugs
 - [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.3...v0.7.0)
-
-#### [v0.6.3] - Date Selection
-- **Added:** Date Selection for "Build" Trackers Logs
-- [Full Changelog](https://github.com/Sparths/AnyHabit/compare/v0.6.2...v0.6.3)
 </details>
 
 ---
