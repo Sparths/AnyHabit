@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import TrackerView from './components/TrackerView';
 import AuthScreen from './components/auth/AuthScreen';
 import HomePage from './components/home/HomePage';
+import ExportModal from './components/modals/ExportModal';
 import GroupManagementModal from './components/modals/GroupManagementModal';
 import LogModal from './components/modals/LogModal';
 import SettingsModal from './components/modals/SettingsModal';
@@ -72,6 +73,8 @@ function AppShell() {
     setIsSidebarOpen,
     isSettingsOpen,
     setIsSettingsOpen,
+    isExportOpen,
+    setIsExportOpen,
     isGroupManagementOpen,
     setIsGroupManagementOpen,
     isLogModalOpen,
@@ -94,6 +97,7 @@ function AppShell() {
     isTypeMenuOpen,
     setIsTypeMenuOpen,
     groups,
+    trackers,
     handleLogSubmit,
     handleTrackerSubmit,
     user,
@@ -179,6 +183,12 @@ function AppShell() {
         setTheme={setTheme}
         onLogout={logout}
         user={user}
+      />
+
+      <ExportModal
+        isOpen={isExportOpen}
+        setIsExportOpen={setIsExportOpen}
+        trackers={trackers}
       />
 
       <GroupManagementModal
