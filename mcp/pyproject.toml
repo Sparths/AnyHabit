@@ -1,0 +1,18 @@
+[project]
+name = "anyhabit-mcp"
+version = "0.1.0"
+description = "Model Context Protocol server for AnyHabit"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.28,<1",
+    "mcp[cli]>=2.2,<3",
+    "python-dotenv>=1.0,<2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

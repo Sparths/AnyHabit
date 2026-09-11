@@ -1,0 +1,26 @@
+# Example only: merge this service into the root docker-compose.yml if you want
+# AnyHabit MCP served over Streamable HTTP.
+#
+# The root .env still provides secrets/settings. Do not expose this port publicly
+# without adding appropriate network/auth protection in front of it.
+
+services:
+  mcp:
+    build:
+      context: ./mcp
+    restart: unless-stopped
+    environment:
+      ANYHABIT_MCP_URL: http://backend:8000
+      ANYHABIT_MCP_TOKEN: ${ANYHABIT_MCP_TOKEN:-}
+      ANYHABIT_MCP_TIMEOUT_SECONDS: ${ANYHABIT_MCP_TIMEOUT_SECONDS:-10}
+      ANYHABIT_MCP_ALLOW_DESTRUCTIVE: ${ANYHABIT_MCP_ALLOW_DESTRUCTIVE:-false}
+      ANYHABIT_MCP_TRANSPORT: streamable-http
+      ANYHABIT_MCP_HOST: 0.0.0.0
+      ANYHABIT_MCP_PORT: 8001
+      ANYHABIT_MCP_PATH: /mcp
+      ANYHABIT_MCP_STATELESS_HTTP: ${ANYHABIT_MCP_STATELESS_HTTP:-false}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8001:8001"

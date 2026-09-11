@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "anyhabit": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "mcp",
+        "run",
+        "server.py"
+      ],
+      "cwd": "/absolute/path/to/AnyHabit/mcp"
+    }
+  }
+}
