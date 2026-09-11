@@ -23,6 +23,14 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
+#### [Unreleased] - MCP / AI Integration
+- **Added:** Model Context Protocol (MCP) server for connecting compatible AI assistants and agents to AnyHabit
+- **Added:** MCP tools for trackers, logs, journals, analytics, dashboards, groups and user preferences
+- **Added:** Support for both local `stdio` clients and deployable Streamable HTTP MCP connections
+- **Added:** Dedicated `ANYHABIT_MCP_*` settings in the root `.env` configuration
+- **Added:** Safety gate for irreversible MCP actions with `ANYHABIT_MCP_ALLOW_DESTRUCTIVE=false` by default
+- **Added:** MCP client configuration, Docker example and setup documentation under [`mcp/`](mcp/README.md)
+
 #### [v1.4.0] - Latest Release
 - **Added:** Nine more dashboard widgets — Tracker Spotlight, Quick Log, Heatmap, Recent Activity, Journal Feed, Mood Trend, Notes, API Explorer and Embed
 - **Added:** Personal API tokens for scripts and integrations (Settings → Developer)
@@ -95,6 +103,7 @@
 * **Fast Navigation:** `Ctrl`/`⌘` + `K` searches trackers, categories and actions.
 * **A Dashboard You Build:** 15 widget types — spotlight a tracker, one-tap logging, heatmaps, feeds, notes, even an embedded Grafana panel.
 * **Built to Integrate:** API tokens, signed webhooks and a Prometheus endpoint, because self-hosted should mean it plugs into everything else you run.
+* **AI / MCP Integration:** Connect compatible AI assistants and agents through the Model Context Protocol to inspect analytics and manage trackers, logs, journals, dashboards and groups.
 * **Dark Mode:** Light, dark, or follow your system.
 * **Full Data Ownership:** Export trackers and journals as CSV for analysis, or a complete JSON backup you can restore here or on another server.
 * **Self-Hosted & Private:** Complete control over your data with SQLite and Docker.
@@ -176,6 +185,15 @@ docker compose up -d --build
 | `ANYHABIT_CORS_ORIGINS` | Extra browser origins allowed to call the API | dev server ports |
 | `ANYHABIT_LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING` or `ERROR` | `INFO` |
 | `VITE_API_URL` | Backend URL when running the frontend separately | unset |
+| `ANYHABIT_MCP_URL` | AnyHabit API base URL used by the MCP server | unset |
+| `ANYHABIT_MCP_TOKEN` | Personal API token used by MCP | unset |
+| `ANYHABIT_MCP_TIMEOUT_SECONDS` | MCP → AnyHabit API timeout | `10` |
+| `ANYHABIT_MCP_ALLOW_DESTRUCTIVE` | Allow irreversible MCP delete/remove tools | `false` |
+| `ANYHABIT_MCP_TRANSPORT` | MCP transport: `stdio` or `streamable-http` | `stdio` |
+| `ANYHABIT_MCP_HOST` | Bind address for Streamable HTTP | `127.0.0.1` |
+| `ANYHABIT_MCP_PORT` | Port for Streamable HTTP | `8001` |
+| `ANYHABIT_MCP_PATH` | Streamable HTTP MCP endpoint path | `/mcp` |
+| `ANYHABIT_MCP_STATELESS_HTTP` | Run Streamable HTTP without MCP session state | `false` |
 
 > [!IMPORTANT]
 > The first-run account is created **only when the database has no users at
@@ -201,6 +219,7 @@ you can build your own client, script your data, or wire it into another tool.
 | **[🔧 Frontend Integration Guide](backend/FRONTEND_INTEGRATION.md)** | Building a custom frontend |
 | **[🗂️ Documentation Index](backend/INDEX.md)** | Navigation hub for backend docs |
 | **[💻 Development Guide](backend/DEVELOPMENT.md)** | Running and contributing to the backend |
+| **[🤖 MCP Integration](mcp/README.md)** | Connect compatible AI assistants and agents through MCP |
 
 ```bash
 # Sign in and keep the session cookie
@@ -224,6 +243,7 @@ AnyHabit is built to plug into the rest of your setup:
 
 * **API tokens** — create one under Settings → Developer, then
   `Authorization: Bearer ahb_…` on any request. Revocable, optionally expiring.
+* **MCP / AI assistants** — the [`mcp/`](mcp/README.md) server exposes safe, structured tools for trackers, logs, journals, analytics, dashboards and groups over `stdio` or Streamable HTTP.
 * **Webhooks** — signed with HMAC-SHA256, fired on logs, journals, relapses and
   streak milestones. Point them at Home Assistant, Discord, n8n or a shell script.
 * **Prometheus** — scrape `/developer/metrics` for streaks, progress and impact,
@@ -254,6 +274,7 @@ or browse them on the hosted demo:
 * **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
 * **Database:** [SQLite](https://www.sqlite.org/) in WAL mode, with a built-in migration runner
 * **Proxy:** [Nginx](https://www.nginx.com/) as a Reverse Proxy & Static File Server
+* **AI Integration:** [Model Context Protocol](https://modelcontextprotocol.io/) via the MCP Python SDK
 
 ---
 
