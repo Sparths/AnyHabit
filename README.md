@@ -23,7 +23,7 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [Unreleased] - MCP / AI Integration
+#### [1.5.0] - MCP / AI Integration
 - **Added:** Model Context Protocol (MCP) server for connecting compatible AI assistants and agents to AnyHabit
 - **Added:** MCP tools for trackers, logs, journals, analytics, dashboards, groups and user preferences
 - **Added:** Support for both local `stdio` clients and deployable Streamable HTTP MCP connections
