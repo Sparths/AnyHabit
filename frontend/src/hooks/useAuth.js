@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   changePasswordApi,
   deleteAccountApi,
+  fetchAuthConfigApi,
   fetchCurrentUserApi,
   loginApi,
   logoutApi,
@@ -14,9 +15,12 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
 
   const hydrateUser = useCallback(async () => {
     try {
+      const authConfig = await fetchAuthConfigApi();
+      setRegistrationEnabled(authConfig.registration_enabled);
       setUser(await fetchCurrentUserApi());
       setError('');
     } catch (requestError) {
@@ -100,6 +104,7 @@ export function useAuth() {
     updatePreferences,
     changePassword,
     deleteAccount,
-    refreshUser: hydrateUser
+    refreshUser: hydrateUser,
+    registrationEnabled
   };
 }

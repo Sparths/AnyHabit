@@ -12,6 +12,7 @@ services:
       # Every value below falls back to a working default, so `docker compose up`
       # still works without a .env file. Copy .env.example to .env to change them.
       - ANYHABIT_SECRET_KEY=${ANYHABIT_SECRET_KEY:-}
+      - ANYHABIT_ALLOW_REGISTRATION=${ANYHABIT_ALLOW_REGISTRATION:-true}
       - ANYHABIT_CORS_ORIGINS=${ANYHABIT_CORS_ORIGINS:-}
       - ANYHABIT_COOKIE_SECURE=${ANYHABIT_COOKIE_SECURE:-auto}
       - ANYHABIT_COOKIE_SAMESITE=${ANYHABIT_COOKIE_SAMESITE:-lax}

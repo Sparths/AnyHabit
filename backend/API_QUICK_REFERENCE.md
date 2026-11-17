@@ -52,6 +52,7 @@ curl -b cookies.txt http://localhost:8000/auth/me
 
 | Method | Path | Purpose |
 | :--- | :--- | :--- |
+| `GET` | `/auth/config` | Public auth configuration, including whether registration is enabled |
 | `POST` | `/auth/register` | Create an account. Password must be ≥ 8 characters. |
 | `POST` | `/auth/login` | Sign in. Throttled after 10 failures per identifier. |
 | `POST` | `/auth/logout` | Clear the session cookie |

@@ -2,6 +2,8 @@ import { apiClient } from './apiClient';
 
 export const registerApi = (payload) => apiClient.post('/auth/register', payload);
 
+export const fetchAuthConfigApi = () => apiClient.get('/auth/config');
+
 export const loginApi = (payload) => apiClient.post('/auth/login', payload);
 
 export const fetchCurrentUserApi = () => apiClient.get('/auth/me');

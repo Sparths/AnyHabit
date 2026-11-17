@@ -135,7 +135,15 @@ function AppShell() {
 }
 
 function App() {
-  const { isAuthLoading, isAuthenticated, authError, isAuthenticating, login, register } = useAppState();
+  const {
+    isAuthLoading,
+    isAuthenticated,
+    authError,
+    isAuthenticating,
+    login,
+    register,
+    registrationEnabled
+  } = useAppState();
 
   if (isAuthLoading) {
     return (
@@ -146,7 +154,15 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <AuthScreen onLogin={login} onRegister={register} error={authError} isBusy={isAuthenticating} />;
+    return (
+      <AuthScreen
+        onLogin={login}
+        onRegister={register}
+        registrationEnabled={registrationEnabled}
+        error={authError}
+        isBusy={isAuthenticating}
+      />
+    );
   }
 
   return <AppShell />;

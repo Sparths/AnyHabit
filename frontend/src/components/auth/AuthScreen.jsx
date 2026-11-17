@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, Loader, LockKeyhole, Mail, UserRound } from 'lucide-react';
 
 const AUTH_COPY = {
@@ -7,10 +7,14 @@ const AUTH_COPY = {
   note: 'Self-hosted. Your data never leaves your server.'
 };
 
-function AuthScreen({ onLogin, onRegister, error, isBusy }) {
+function AuthScreen({ onLogin, onRegister, registrationEnabled, error, isBusy }) {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ username: '', email: '', identifier: '', password: '' });
   const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (!registrationEnabled) setMode('login');
+  }, [registrationEnabled]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -78,15 +82,17 @@ function AuthScreen({ onLogin, onRegister, error, isBusy }) {
             >
               Sign In
             </button>
-            <button
-              type="button"
-              onClick={() => setMode('register')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                mode === 'register' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
-              }`}
-            >
-              Create Account
-            </button>
+            {registrationEnabled && (
+              <button
+                type="button"
+                onClick={() => setMode('register')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  mode === 'register' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500'
+                }`}
+              >
+                Create Account
+              </button>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
