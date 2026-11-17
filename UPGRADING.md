@@ -1,11 +1,12 @@
 # Upgrading AnyHabit
 
-**Short version: pull, rebuild, restart. Your data stays put.**
+**Short version: pull the new images and restart. Your data stays put.**
 
 ```bash
 cd AnyHabit
 git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 That is the whole procedure. The rest of this page explains what happens

@@ -121,8 +121,9 @@ AnyHabit is designed to be "up and running" in seconds. You do **not** need Node
 git clone https://github.com/Sparths/AnyHabit.git
 cd AnyHabit
 
-# 2. Build and start everything
-docker compose up -d --build
+# 2. Pull the published images and start everything
+docker compose pull
+docker compose up -d
 ```
 
 Open **http://localhost** (or your device's IP) in your browser.
@@ -134,6 +135,12 @@ then change the password under **Settings → Account**.
 > Your data lives in a Docker volume (`db_data`) and survives stopping,
 > rebuilding and upgrading the containers. See [Upgrading](#️-upgrading).
 
+Images are published to GHCR for each release:
+`ghcr.io/sparths/anyhabit-frontend` and
+`ghcr.io/sparths/anyhabit-backend`. To build locally instead, run
+`docker compose up -d --build`; the `build` configuration remains available
+for development.
+
 ---
 
 ## ⬆️ Upgrading
@@ -141,7 +148,8 @@ then change the password under **Settings → Account**.
 ```bash
 cd AnyHabit
 git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 That is all. Your data lives in a Docker volume, not in the container, and
@@ -166,7 +174,7 @@ of them:
 
 ```bash
 cp .env.example .env   # edit it, then:
-docker compose up -d --build
+docker compose up -d
 ```
 
 | Variable | Description | Default |
