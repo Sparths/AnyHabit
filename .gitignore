@@ -11,6 +11,11 @@ venv/
 # pytest cache
 .pytest_cache/
 
+# Local backend data: the database, its backups and the login signing key
+/data/
+/backend/data/
+secret_key
+
 # Node
 node_modules/
 frontend/node_modules/

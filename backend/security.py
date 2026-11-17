@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import hmac
 import os
 import secrets
+import tempfile
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import jwt
 from fastapi import HTTPException, Request, Response, status
+
+from .database import DATA_DIR
 
 PASSWORD_ITERATIONS = int(os.environ.get("ANYHABIT_PASSWORD_ITERATIONS", "200000"))
 TOKEN_TTL_SECONDS = int(os.environ.get("ANYHABIT_TOKEN_TTL_SECONDS", str(60 * 60 * 24 * 7)))
@@ -32,19 +37,98 @@ BOOTSTRAP_EMAIL = os.environ.get("ANYHABIT_BOOTSTRAP_EMAIL", "owner@anyhabit.loc
 BOOTSTRAP_USERNAME = os.environ.get("ANYHABIT_BOOTSTRAP_USERNAME", "owner")
 BOOTSTRAP_PASSWORD = os.environ.get("ANYHABIT_BOOTSTRAP_PASSWORD", "anyhabit")
 
-DEFAULT_DEV_SECRET = "anyhabit-development-secret"
-SECRET_KEY = os.environ.get("ANYHABIT_SECRET_KEY", "").strip() or DEFAULT_DEV_SECRET
-
 LOGIN_MAX_ATTEMPTS = int(os.environ.get("ANYHABIT_LOGIN_MAX_ATTEMPTS", "10"))
 LOGIN_LOCKOUT_SECONDS = int(os.environ.get("ANYHABIT_LOGIN_LOCKOUT_SECONDS", "300"))
 
 
-def is_using_default_secret() -> bool:
-    """Whether the JWT signing key is still the shipped placeholder.
+# ---------------------------------------------------------------------------
+# Signing key
+# ---------------------------------------------------------------------------
+# Login sessions are JWTs signed with this key, so anyone who knows it can sign
+# in as any user.  ANYHABIT_SECRET_KEY wins when it is set.  Otherwise a random
+# key is generated on first start and kept in the data volume, next to the
+# database, so it survives restarts and upgrades without any configuration.
 
-    Surfaced through ``/health`` so an operator can notice before it matters.
+SECRET_KEY_FILE = DATA_DIR / "secret_key"
+
+# The fallback key shipped up to 1.5.1.  It is public, so configuring it is
+# treated exactly like configuring no key at all.
+LEGACY_PUBLIC_SECRET = "anyhabit-development-secret"
+
+
+def _read_secret_key(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""
+
+
+def _load_or_create_secret_key(path: Path) -> tuple[str, bool]:
+    """Return ``(key, created)``, generating and storing a key if there is none."""
+    existing = _read_secret_key(path)
+    if existing:
+        return existing, False
+
+    key = secrets.token_hex(32)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Written in full to a private temp file first (mkstemp creates it 0600)
+    # and only then put in place, so no process ever reads a half-written key.
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=".secret_key-")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(key + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            # Refuses to overwrite: if another worker got there first, its key wins.
+            os.link(tmp_name, path)
+        except FileExistsError:
+            if not _read_secret_key(path):
+                # An empty file left behind by an interrupted earlier start.
+                os.replace(tmp_name, path)
+        except OSError:
+            # Filesystems without hard links, such as some network shares.
+            os.replace(tmp_name, path)
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp_name)
+
+    stored = _read_secret_key(path)
+    if not stored:
+        raise OSError(f"{path} is still empty after writing it")
+    return stored, stored == key
+
+
+def _resolve_secret_key(key_file: Path) -> tuple[str, str, str | None]:
+    """Return ``(key, source, warning)``.
+
+    ``source`` is ``"env"``, ``"file"`` (an existing stored key), ``"created"``
+    (a key generated just now) or ``"ephemeral"`` (could not be stored, so it
+    only lasts until the next restart).  It never falls back to a known key.
     """
-    return SECRET_KEY == DEFAULT_DEV_SECRET
+    warning = None
+    configured = os.environ.get("ANYHABIT_SECRET_KEY", "").strip()
+    if configured == LEGACY_PUBLIC_SECRET:
+        configured = ""
+        warning = (
+            "ANYHABIT_SECRET_KEY is set to the old built-in development key, which is public and "
+            "would let anyone forge a login. It is ignored; remove it from your .env."
+        )
+    if configured:
+        return configured, "env", None
+
+    try:
+        key, created = _load_or_create_secret_key(key_file)
+    except OSError as exc:
+        return secrets.token_hex(32), "ephemeral", (
+            f"Could not store a signing key in {key_file} ({exc}), so a temporary one is used and "
+            "everyone is signed out whenever AnyHabit restarts. Set ANYHABIT_SECRET_KEY to avoid this."
+        )
+    return key, ("created" if created else "file"), warning
+
+
+# Logged by main.py once logging is configured.
+SECRET_KEY, SECRET_KEY_SOURCE, SECRET_KEY_WARNING = _resolve_secret_key(SECRET_KEY_FILE)
 
 
 # ---------------------------------------------------------------------------

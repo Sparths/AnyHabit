@@ -77,6 +77,22 @@ docker compose start backend
 
 ## Version-specific notes
 
+### Upgrading to 1.5.2
+
+**Security fix — please upgrade.** Up to 1.5.1, an install without
+`ANYHABIT_SECRET_KEY` signed logins with a key that is public in this
+repository, so anyone who could reach it could sign in as any user.
+
+AnyHabit now generates a random key on first start and keeps it in the data
+volume as `data/secret_key`. There is nothing to configure, but:
+
+- **If you never set `ANYHABIT_SECRET_KEY`, everyone is signed out once** after
+  this upgrade. Sign in again; no data is affected. API tokens keep working.
+- If you did set it, nothing changes for you.
+- The `data/secret_key` file is as sensitive as a password: anyone who has it
+  can sign in as any user. It is included when you copy the volume as a
+  backup, so keep such copies private.
+
 ### Upgrading to 1.3.0
 
 Nothing is required of you, but a few things will look different:
