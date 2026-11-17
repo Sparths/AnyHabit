@@ -32,8 +32,12 @@ BOOTSTRAP_EMAIL = os.environ.get("ANYHABIT_BOOTSTRAP_EMAIL", "owner@anyhabit.loc
 BOOTSTRAP_USERNAME = os.environ.get("ANYHABIT_BOOTSTRAP_USERNAME", "owner")
 BOOTSTRAP_PASSWORD = os.environ.get("ANYHABIT_BOOTSTRAP_PASSWORD", "anyhabit")
 
-DEFAULT_DEV_SECRET = "anyhabit-development-secret"
-SECRET_KEY = os.environ.get("ANYHABIT_SECRET_KEY", "").strip() or DEFAULT_DEV_SECRET
+_ENV_SECRET_KEY = os.environ.get("ANYHABIT_SECRET_KEY", "").strip()
+# No publicly known fallback: if the operator hasn't set one, generate a
+# random key per process start rather than signing tokens with a value that
+# ships in the repo and would let anyone forge a valid session.
+_USING_GENERATED_SECRET = not _ENV_SECRET_KEY
+SECRET_KEY = _ENV_SECRET_KEY or secrets.token_hex(32)
 
 LOGIN_MAX_ATTEMPTS = int(os.environ.get("ANYHABIT_LOGIN_MAX_ATTEMPTS", "10"))
 LOGIN_LOCKOUT_SECONDS = int(os.environ.get("ANYHABIT_LOGIN_LOCKOUT_SECONDS", "300"))
