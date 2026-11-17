@@ -26,7 +26,7 @@ from .routers import (
     logs_router,
     trackers_router,
 )
-from .security import is_using_default_secret
+from .security import SECRET_KEY_FILE, SECRET_KEY_SOURCE, SECRET_KEY_WARNING
 from .version import APP_NAME, APP_VERSION, SCHEMA_VERSION
 
 logging.basicConfig(
@@ -39,11 +39,10 @@ logger = logging.getLogger("anyhabit")
 # writes a rollback snapshot first.  Runs before the app accepts traffic.
 MIGRATION_REPORT = prepare_database()
 
-if is_using_default_secret():
-    logger.warning(
-        "ANYHABIT_SECRET_KEY is not set, so sessions are signed with the built-in development key. "
-        "Set it in your .env before exposing AnyHabit beyond your own machine."
-    )
+if SECRET_KEY_WARNING:
+    logger.warning(SECRET_KEY_WARNING)
+if SECRET_KEY_SOURCE == "created":
+    logger.info("Generated a signing key for login sessions and stored it in %s.", SECRET_KEY_FILE)
 
 app = FastAPI(
     title=f"{APP_NAME} API",
