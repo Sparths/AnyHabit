@@ -74,6 +74,7 @@ The backend seeds a local bootstrap account on first run using these environment
 - `ANYHABIT_BOOTSTRAP_USERNAME`
 - `ANYHABIT_BOOTSTRAP_EMAIL`
 - `ANYHABIT_BOOTSTRAP_PASSWORD`
+- `ANYHABIT_ALLOW_REGISTRATION` (set to `false` to disable new accounts)
 - `ANYHABIT_SECRET_KEY`
 - `ANYHABIT_CORS_ORIGINS`
 - `ANYHABIT_COOKIE_SECURE`

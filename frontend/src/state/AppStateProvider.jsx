@@ -13,6 +13,7 @@ export function AppStateProvider({ children }) {
   const {
     user,
     isLoading: isAuthLoading,
+    registrationEnabled,
     error: authError,
     isAuthenticating,
     login,
@@ -270,6 +271,7 @@ export function AppStateProvider({ children }) {
   const value = {
     user,
     isAuthLoading,
+    registrationEnabled,
     authError,
     isAuthenticating,
     isAuthenticated,

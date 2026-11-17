@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -19,8 +21,28 @@ from ..time_utils import is_valid_timezone
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def registration_is_enabled() -> bool:
+    return os.environ.get("ANYHABIT_ALLOW_REGISTRATION", "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+@router.get("/config")
+def read_auth_config():
+    return {"registration_enabled": registration_is_enabled()}
+
+
 @router.post("/register", response_model=schemas.AuthResponse)
 def register(payload: schemas.UserCreate, response: Response, request: Request, db: Session = Depends(get_db)):
+    if not registration_is_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="New account registration is disabled by the server administrator",
+        )
+
     # Email and username are normalised by the schema validators.
     existing_user = (
         db.query(models.User)

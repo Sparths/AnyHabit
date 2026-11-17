@@ -173,6 +173,7 @@ docker compose up -d --build
 | :--- | :--- | :--- |
 | `APP_PORT` | Port the app is served on | `80` |
 | `ANYHABIT_SECRET_KEY` | Signs login sessions. **Set this** before exposing AnyHabit beyond your own machine (`openssl rand -hex 32`). Changing it only signs everyone out; it never touches data. | built-in dev key |
+| `ANYHABIT_ALLOW_REGISTRATION` | Allow new accounts to register. Set to `false` after creating the accounts you need. | `true` |
 | `ANYHABIT_COOKIE_SECURE` | `auto` marks the auth cookie Secure only when the request arrived over HTTPS. `true`/`false` force it. | `auto` |
 | `ANYHABIT_COOKIE_SAMESITE` | SameSite policy for the auth cookie | `lax` |
 | `ANYHABIT_COOKIE_DOMAIN` | Optional domain scope, e.g. `.example.com` | unset |
