@@ -1,4 +1,8 @@
-FROM node:22-alpine AS builder
+# The build output (static files in /app/dist) is architecture-independent, so
+# the builder always runs on the build host's native platform. This keeps
+# multi-arch builds from running npm under QEMU emulation, which is slow and
+# crashes Node on arm64 ("qemu: uncaught target signal 4 (Illegal instruction)").
+FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 
 WORKDIR /app
 
