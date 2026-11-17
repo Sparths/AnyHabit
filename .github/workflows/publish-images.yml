@@ -54,3 +54,75 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  release-notes:
+    name: Add Docker images to release notes
+    # Only runs once both images are pushed, so the notes never point at an
+    # image that failed to build.
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Append Docker section to the release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          set -euo pipefail
+
+          # Same version the semver tags above were derived from (v1.5.2 -> 1.5.2).
+          VERSION="${TAG#v}"
+          REGISTRY="ghcr.io/${OWNER,,}"
+
+          if [ "$PRERELEASE" = "true" ]; then
+            UPGRADE_NOTE='This is a **pre-release**, so `latest` still points at the previous stable release. To try it, pin this version in `.env` as shown below, then run `docker compose pull && docker compose up -d`.'
+          else
+            UPGRADE_NOTE='Upgrade an existing install with `git pull && docker compose pull && docker compose up -d`. Your data stays in the `db_data` volume.'
+          fi
+
+          gh release view "$TAG" --json body --jq .body > notes.md
+          # Drop the section an earlier run added, so re-running stays clean.
+          sed -i '/<!-- docker-images:start -->/,/<!-- docker-images:end -->/d' notes.md
+          # ...and the blank lines left in front of it.
+          sed -i -e ':a' -e '/^\n*$/{$d;N;ba' -e '}' notes.md
+
+          cat >> notes.md <<'EOF'
+
+          <!-- docker-images:start -->
+          ## 🐳 Docker images
+
+          Prebuilt for `linux/amd64` and `linux/arm64` (PCs, servers, NAS and 64-bit Raspberry Pi):
+
+          | Component | Image |
+          | :--- | :--- |
+          | Frontend | [`@REGISTRY@/anyhabit-frontend:@VERSION@`](@REPO_URL@/pkgs/container/anyhabit-frontend) |
+          | Backend | [`@REGISTRY@/anyhabit-backend:@VERSION@`](@REPO_URL@/pkgs/container/anyhabit-backend) |
+
+          @UPGRADE_NOTE@
+
+          To stay on exactly this version, add to your `.env`:
+
+          ```env
+          ANYHABIT_FRONTEND_IMAGE=@REGISTRY@/anyhabit-frontend:@VERSION@
+          ANYHABIT_BACKEND_IMAGE=@REGISTRY@/anyhabit-backend:@VERSION@
+          ```
+          <!-- docker-images:end -->
+          EOF
+
+          # Fill in the placeholders. The note contains '&', which sed would
+          # otherwise read as "the matched text", so escape it (and the '|'
+          # delimiter and backslashes) first.
+          NOTE_ESCAPED=$(printf '%s' "$UPGRADE_NOTE" | sed 's/[&|\\]/\\&/g')
+          sed -i -e "s|@REGISTRY@|$REGISTRY|g" \
+                 -e "s|@VERSION@|$VERSION|g" \
+                 -e "s|@REPO_URL@|$REPO_URL|g" \
+                 -e "s|@UPGRADE_NOTE@|$NOTE_ESCAPED|g" \
+                 notes.md
+
+          gh release edit "$TAG" --notes-file notes.md
