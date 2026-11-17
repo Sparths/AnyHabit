@@ -23,6 +23,11 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
+#### [1.5.1] - Prebuild Docker Images
+- **Added:** Prebuild Docker Images.
+- **Frontend:**  `ghcr.io/sparths/anyhabit-frontend`
+- **Backend:** `ghcr.io/sparths/anyhabit-backend`
+
 #### [1.5.0] - MCP / AI Integration
 - **Added:** Model Context Protocol (MCP) server for connecting compatible AI assistants and agents to AnyHabit
 - **Added:** MCP tools for trackers, logs, journals, analytics, dashboards, groups and user preferences
