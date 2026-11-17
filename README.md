@@ -24,8 +24,8 @@
 <details>
 <summary><b>🚀 Click to see Recent Updates (Changelog)</b></summary>
 
-#### [1.5.1] - Prebuild Docker Images
-- **Added:** Prebuild Docker Images.
+#### [1.5.1] - Prebuilt Docker Images
+- **Added:** Prebuilt multi-arch Docker images (`amd64` + `arm64`) for every release — see [Prebuilt Docker images](#-prebuilt-docker-images).
 - **Frontend:**  `ghcr.io/sparths/anyhabit-frontend`
 - **Backend:** `ghcr.io/sparths/anyhabit-backend`
 
@@ -141,11 +141,35 @@ then change the password under **Settings → Account**.
 > Your data lives in a Docker volume (`db_data`) and survives stopping,
 > rebuilding and upgrading the containers. See [Upgrading](#️-upgrading).
 
-Images are published to GHCR for each release:
-`ghcr.io/sparths/anyhabit-frontend` and
-`ghcr.io/sparths/anyhabit-backend`. To build locally instead, run
-`docker compose up -d --build`; the `build` configuration remains available
-for development.
+### 🐳 Prebuilt Docker images
+
+Every release is published automatically to the GitHub Container Registry, for
+both `linux/amd64` and `linux/arm64`. The same command works on a PC, a NAS or a
+Raspberry Pi, with nothing to compile on the device.
+
+| Component | Image |
+| :--- | :--- |
+| Frontend | [`ghcr.io/sparths/anyhabit-frontend`](https://github.com/Sparths/AnyHabit/pkgs/container/anyhabit-frontend) |
+| Backend | [`ghcr.io/sparths/anyhabit-backend`](https://github.com/Sparths/AnyHabit/pkgs/container/anyhabit-backend) |
+
+| Tag | Points to |
+| :--- | :--- |
+| `latest` | The newest stable release — the default in `docker-compose.yml` |
+| `1` | The newest `1.x.x` release |
+| `1.5` | The newest `1.5.x` patch release |
+| `1.5.1` | Exactly that release; never changes |
+
+To stay on a version instead of following `latest`, set the images in `.env`:
+
+```env
+ANYHABIT_FRONTEND_IMAGE=ghcr.io/sparths/anyhabit-frontend:1.5
+ANYHABIT_BACKEND_IMAGE=ghcr.io/sparths/anyhabit-backend:1.5
+```
+
+> [!NOTE]
+> Raspberry Pi needs a **64-bit OS** (Pi 3, 4, 5 or Zero 2 W) for the prebuilt
+> images. On a 32-bit OS, or to run your own changes, build the images on the
+> device instead with `docker compose up -d --build`.
 
 ---
 
